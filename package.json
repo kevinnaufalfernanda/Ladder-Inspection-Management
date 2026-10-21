@@ -1,4 +1,5 @@
 {
+    "build": "vite build",
     "$schema": "https://www.schemastore.org/package.json",
     "private": true,
     "type": "module",
