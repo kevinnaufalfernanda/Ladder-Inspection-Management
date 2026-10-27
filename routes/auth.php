@@ -17,6 +17,13 @@ Route::middleware('guest')->group(function () {
 
     Route::post('register', [RegisteredUserController::class, 'store']);
 
+    Route::get('login/{role}', [AuthenticatedSessionController::class, 'create'])
+        ->where('role', 'pic_safety|inspector')
+        ->name('login.role');
+
+    Route::post('login/{role}', [AuthenticatedSessionController::class, 'store'])
+        ->where('role', 'pic_safety|inspector');
+
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
 

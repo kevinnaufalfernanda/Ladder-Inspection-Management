@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('inspector_id')->constrained('users')->cascadeOnDelete();
             $table->enum('status', ['safe', 'unsafe']);
             $table->json('checklist');
-            $table->timestamp('valid_until');
+            $table->timestamp('valid_until')->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();
         });

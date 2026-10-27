@@ -3,22 +3,22 @@
 @tailwind utilities;
 
 :root {
-    --k3-bg: #edf3f1;
-    --k3-surface: #f9fbfa;
+    --k3-bg: #eef2ed;
+    --k3-surface: #f7f9f5;
     --k3-panel: #ffffff;
-    --k3-line: #dfe8e4;
-    --k3-navy: #0f172a;
-    --k3-dark: #1d3557;
-    --k3-brand: #1e6f5c;
-    --k3-brand-strong: #144a3d;
-    --k3-accent: #f1b63d;
-    --k3-accent-soft: #fff4d6;
-    --k3-alert: #d94a41;
-    --k3-alert-soft: #ffe4e1;
-    --k3-safe: #2f9f7e;
-    --k3-safe-soft: #daefe8;
-    --k3-text: #122033;
-    --k3-muted: #64748b;
+    --k3-line: #d9e1d7;
+    --k3-navy: #16251f;
+    --k3-dark: #263d32;
+    --k3-brand: #39735d;
+    --k3-brand-strong: #204c3b;
+    --k3-accent: #c4e86b;
+    --k3-accent-soft: #edf8c9;
+    --k3-alert: #c94c43;
+    --k3-alert-soft: #fae5e1;
+    --k3-safe: #3e8b69;
+    --k3-safe-soft: #deefe3;
+    --k3-text: #17251f;
+    --k3-muted: #718078;
 }
 
 html {
@@ -27,7 +27,7 @@ html {
 
 body {
     @apply bg-[var(--k3-bg)] text-[var(--k3-text)] antialiased;
-    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-family: "Figtree", sans-serif;
 }
 
 button,
@@ -41,19 +41,45 @@ textarea {
 }
 
 .k3-shell {
-    background: linear-gradient(180deg, #f4f8f7 0%, #edf3f1 100%);
+    min-height: 100vh;
+    background: #f4f6f3;
 }
 
 .k3-panel {
     background: var(--k3-panel);
     border: 1px solid var(--k3-line);
-    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04);
+    box-shadow: 0 2px 8px rgba(22, 37, 31, 0.035);
+    border-radius: 10px;
 }
 
 .k3-card {
     background: rgba(255, 255, 255, 0.86);
     border: 1px solid var(--k3-line);
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+    box-shadow: 0 2px 8px rgba(22, 37, 31, 0.035);
+    border-radius: 10px;
+}
+
+.k3-topbar {
+    background: rgba(247, 249, 245, 0.9);
+    border-bottom: 1px solid rgba(217, 225, 215, 0.9);
+    box-shadow: 0 6px 24px rgba(22, 37, 31, 0.04);
+    backdrop-filter: blur(16px);
+}
+
+.k3-nav-link {
+    color: var(--k3-muted);
+    transition: color 180ms ease, background-color 180ms ease;
+}
+
+.k3-nav-link:hover,
+.k3-nav-link-active {
+    color: var(--k3-brand-strong);
+    background: var(--k3-accent-soft);
+}
+
+.k3-brand-mark {
+    background: var(--k3-navy);
+    color: var(--k3-accent);
 }
 
 .k3-soft-badge {
@@ -105,4 +131,34 @@ textarea {
     border: 1px solid var(--k3-line);
     color: var(--k3-text);
 }
+
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 10mm;
+    }
+
+    body {
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+
+    .print\:hidden {
+        display: none !important;
+    }
+
+    .print\:shadow-none {
+        box-shadow: none !important;
+    }
+
+    .print\:border-4 {
+        border-width: 4px !important;
+    }
+
+    .print\:break-inside-avoid {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+}
+
 

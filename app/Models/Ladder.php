@@ -10,7 +10,17 @@ class Ladder extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['uuid', 'location', 'type', 'description'];
+    protected $fillable = [
+        'uuid',
+        'location',
+        'type',
+        'owner_name',
+        'responsible_name',
+        'max_load',
+        'inspector_id',
+        'identifier',
+        'description',
+    ];
 
     protected static function boot()
     {
@@ -30,6 +40,11 @@ class Ladder extends Model
     public function inspections()
     {
         return $this->hasMany(Inspection::class);
+    }
+
+    public function inspector()
+    {
+        return $this->belongsTo(User::class, 'inspector_id');
     }
 
     public function latestInspection()

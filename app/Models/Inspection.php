@@ -9,15 +9,23 @@ class Inspection extends Model
     protected $fillable = [
         'ladder_id',
         'inspector_id',
+        'submitted_by_id',
+        'reviewed_by_id',
         'status',
+        'workflow_status',
         'checklist',
+        'review_data',
         'valid_until',
-        'notes'
+        'notes',
+        'review_comment',
+        'approved_at',
     ];
 
     protected $casts = [
         'checklist' => 'array',
+        'review_data' => 'array',
         'valid_until' => 'datetime',
+        'approved_at' => 'datetime',
     ];
 
     public function ladder()
@@ -28,6 +36,16 @@ class Inspection extends Model
     public function inspector()
     {
         return $this->belongsTo(User::class, 'inspector_id');
+    }
+
+    public function submitter()
+    {
+        return $this->belongsTo(User::class, 'submitted_by_id');
+    }
+
+    public function reviewer()
+    {
+        return $this->belongsTo(User::class, 'reviewed_by_id');
     }
 
     public function getIsValidAttribute()

@@ -53,6 +53,11 @@ class User extends Authenticatable
         return $this->hasMany(Inspection::class, 'inspector_id');
     }
 
+    public function submittedInspections(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Inspection::class, 'submitted_by_id');
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
@@ -61,5 +66,10 @@ class User extends Authenticatable
     public function isInspector(): bool
     {
         return $this->role === 'inspector' || $this->role === 'admin';
+    }
+
+    public function isPicSafety(): bool
+    {
+        return $this->role === 'pic_safety';
     }
 }
