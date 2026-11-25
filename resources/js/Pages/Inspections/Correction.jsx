@@ -1,5 +1,15 @@
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, ShieldAlert, CheckCircle2, XCircle, Clock, Camera, AlertCircle, Send } from 'lucide-react';
+import {
+    ArrowLeft,
+    ShieldAlert,
+    CheckCircle2,
+    XCircle,
+    Clock,
+    Camera,
+    AlertCircle,
+    Send,
+} from 'lucide-react';
 import { useState } from 'react';
 
 export default function Correction({ inspection }) {
@@ -30,50 +40,47 @@ export default function Correction({ inspection }) {
     const hasAllPhotos = items.length > 0 && items.every((item) => data.photos[item.key]);
 
     const backHref = ladder.uuid ? route('ladders.show', ladder.uuid) : route('dashboard');
+    const assetTitle = ladder.identifier || `${ladder.type === 'permanent' ? 'Permanent' : 'Portable'} - ${ladder.location}`;
 
     return (
-        <div className="k3-shell min-h-screen py-8 font-sans">
+        <AuthenticatedLayout
+            breadcrumbs={[
+                { label: 'Data Aset', href: route('ladders.index') },
+                { label: ladder.location || 'Detail Aset', href: ladder.uuid ? route('ladders.show', ladder.uuid) : route('dashboard') },
+                { label: 'Perbaikan Aset' },
+            ]}
+        >
             <Head title={`Perbaiki Item Reject - ${ladder.location}`} />
 
-            <div className="mx-auto max-w-5xl space-y-6 px-4 sm:px-6 lg:px-8">
-                {/* Banner Header Gaya Industri K3 (Sama persis dengan Create.jsx) */}
-                <div className="relative overflow-hidden rounded-[26px] bg-[var(--k3-navy)] p-6 text-white shadow-[0_18px_45px_rgba(22,37,31,0.14)] sm:p-8">
-                    <div className="absolute -right-12 -top-16 h-40 w-40 rounded-full border-[18px] border-[var(--k3-accent)]/20" />
-                    <div className="relative mb-6 flex items-center justify-between">
+            <div className="mx-auto max-w-7xl space-y-6">
+
+                {/* Page Title & Back Button */}
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
                         <Link
                             href={backHref}
-                            className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
+                            className="sl-btn-back"
+                            title="Kembali"
                         >
-                            <ArrowLeft className="h-4 w-4" />
-                            Kembali
+                            <ArrowLeft className="h-3.5 w-3.5" />
+                            <span>Kembali</span>
                         </Link>
-                        <div className="flex items-center gap-2">
-                            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--k3-accent)] text-[var(--k3-navy)]">
-                                <ShieldAlert className="h-4 w-4 text-[var(--k3-navy)]" />
-                            </div>
-                            <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--k3-accent)]">
-                                EHS Standard Form · Perbaikan
-                            </span>
+                        <div>
+                            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
+                                Perbaikan Temuan Item Reject
+                            </h1>
+                            <p className="mt-0.5 text-xs text-slate-500 font-medium">
+                                {assetTitle} • Tindak lanjut perbaikan fisik K3 di lapangan
+                            </p>
                         </div>
-                    </div>
-                    <div>
-                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--k3-accent)]">
-                            Formulir Perbaikan Item Reject · Tindak Lanjut Temuan K3
-                        </p>
-                        <h2 className="mt-2 text-2xl font-extrabold tracking-tight sm:text-3xl">
-                            {ladder.identifier || ladder.location}
-                        </h2>
-                        <p className="mt-2 text-sm text-slate-300">
-                            Lokasi: <span className="text-white font-semibold">{ladder.location}</span> · Beban Maks: <span className="text-white font-semibold">{ladder.max_load || '-'} Kg</span> · Inspektor: <span className="text-[var(--k3-accent)] font-semibold">{ladder.inspector?.name || 'Belum ditugaskan'}</span>
-                        </p>
                     </div>
                 </div>
 
-                {/* Banner Ringkasan Status Inspeksi Terakhir */}
-                <div className="k3-panel p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
-                    <div className="flex items-center gap-2 font-bold text-[var(--k3-navy)]">
-                        <Clock className="w-4 h-4 text-[var(--k3-brand)]" />
-                        <span>Status Temuan:</span>
+                {/* Status Ringkasan */}
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
+                    <div className="flex items-center gap-2 font-bold text-slate-900">
+                        <Clock className="w-4 h-4 text-amber-500" />
+                        <span>Tanggal Temuan:</span>
                         <span className="text-slate-600 font-normal">
                             {inspection.created_at ? new Date(inspection.created_at).toLocaleDateString('id-ID', { dateStyle: 'long' }) : '-'}
                         </span>
@@ -92,7 +99,7 @@ export default function Correction({ inspection }) {
 
                 <form onSubmit={submit} className="space-y-6">
                     {/* Progress Bar Dokumentasi Perbaikan */}
-                    <div className="rounded-2xl border border-[var(--k3-line)] bg-white p-5 shadow-sm">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
                         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                             <div>
                                 <h3 className="text-sm font-bold text-slate-900">
@@ -113,18 +120,18 @@ export default function Correction({ inspection }) {
                             )}
                         </div>
 
-                        <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                        <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
                             <div
-                                className="h-full bg-[var(--k3-brand)] transition-all duration-300"
+                                className="h-full bg-[#f59e0b] transition-all duration-300"
                                 style={{ width: `${items.length ? (uploadedCount / items.length) * 100 : 0}%` }}
                             />
                         </div>
                     </div>
 
                     {/* DAFTAR BUTIR REJECT KHUSUS PERBAIKAN */}
-                    <div className="rounded-[24px] border border-[var(--k3-line)] bg-white p-5 sm:p-7 shadow-sm space-y-4">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
                         <div className="border-b border-slate-100 pb-3">
-                            <h4 className="text-sm font-extrabold uppercase tracking-wider text-[var(--k3-navy)]">
+                            <h4 className="text-sm font-black uppercase tracking-wider text-slate-900">
                                 Butir Checklist yang Ditolak ({items.length} Item)
                             </h4>
                             <p className="text-xs text-slate-500 mt-0.5">
@@ -140,13 +147,13 @@ export default function Correction({ inspection }) {
                                 return (
                                     <div
                                         key={item.key}
-                                        className={`rounded-2xl border-2 p-4 transition-all flex flex-col justify-between ${
+                                        className={`rounded-2xl border p-4 transition-all flex flex-col justify-between ${
                                             hasPhoto
-                                                ? 'border-emerald-500 bg-emerald-50/20'
-                                                : 'border-rose-300 bg-rose-50/40 hover:border-rose-400'
+                                                ? 'border-emerald-400 bg-emerald-50/20'
+                                                : 'border-rose-200 bg-rose-50/30 hover:border-rose-300'
                                         }`}
                                     >
-                                        <div className="space-y-2">
+                                        <div className="space-y-2.5">
                                             <div className="flex items-start justify-between gap-2.5">
                                                 <span className="text-sm font-bold text-slate-900 leading-snug">
                                                     {item.label}
@@ -169,14 +176,14 @@ export default function Correction({ inspection }) {
                                         </div>
 
                                         {/* Upload Foto Bukti & Komentar Tindak Lanjut */}
-                                        <div className="mt-4 pt-3 border-t border-slate-200 space-y-3">
+                                        <div className="mt-4 pt-3 border-t border-slate-100 space-y-3">
                                             <div>
                                                 <label className="block text-[11px] font-bold text-slate-800 mb-1">
                                                     Unggah Foto Bukti Perbaikan <span className="text-rose-600">*</span>
                                                 </label>
                                                 <label className={`flex cursor-pointer items-center gap-2 rounded-xl border p-2.5 text-xs font-semibold transition ${
                                                     hasPhoto
-                                                        ? 'border-emerald-500 bg-white text-emerald-800 shadow-sm'
+                                                        ? 'border-emerald-500 bg-white text-emerald-800 shadow-xs'
                                                         : 'border-dashed border-rose-300 bg-white text-rose-700 hover:border-rose-500'
                                                 }`}>
                                                     <Camera className="h-4 w-4 shrink-0" />
@@ -194,11 +201,11 @@ export default function Correction({ inspection }) {
 
                                                 {/* Pratinjau Foto jika sudah dipilih */}
                                                 {previewUrl && (
-                                                    <div className="mt-2 flex items-center gap-3 rounded-lg bg-emerald-50/60 p-2 border border-emerald-200">
+                                                    <div className="mt-2 flex items-center gap-3 rounded-xl bg-emerald-50 p-2 border border-emerald-200">
                                                         <img
                                                             src={previewUrl}
                                                             alt="Bukti Perbaikan"
-                                                            className="h-14 w-20 object-cover rounded-md border border-emerald-300 shadow-sm shrink-0"
+                                                            className="h-12 w-16 object-cover rounded-lg border border-emerald-300 shadow-xs shrink-0"
                                                         />
                                                         <span className="text-[11px] font-bold text-emerald-800">
                                                             ✓ Foto berhasil dimuat
@@ -217,15 +224,13 @@ export default function Correction({ inspection }) {
                                                 <label className="block text-[11px] font-bold text-slate-800 mb-1">
                                                     Catatan / Tindak Lanjut PIC Safety (Opsional)
                                                 </label>
-                                                <div className="relative">
-                                                    <input
-                                                        type="text"
-                                                        value={data.comments[item.key] || ''}
-                                                        onChange={(e) => setData('comments', { ...data.comments, [item.key]: e.target.value })}
-                                                        placeholder="Contoh: Telah diganti dengan baut baru & dibersihkan."
-                                                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs placeholder:text-slate-400 focus:border-[var(--k3-brand)] focus:ring-[var(--k3-brand)]"
-                                                    />
-                                                </div>
+                                                <input
+                                                    type="text"
+                                                    value={data.comments[item.key] || ''}
+                                                    onChange={(e) => setData('comments', { ...data.comments, [item.key]: e.target.value })}
+                                                    placeholder="Contoh: Telah diganti dengan baut baru & dibersihkan."
+                                                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:border-[#0f172a] focus:outline-none"
+                                                />
                                             </div>
                                         </div>
                                     </div>
@@ -235,7 +240,7 @@ export default function Correction({ inspection }) {
                     </div>
 
                     {/* Submit Bar Bagian Bawah */}
-                    <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[var(--k3-line)] bg-white p-5 shadow-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
                         <div>
                             <p className="text-sm font-bold text-slate-900">
                                 {hasAllPhotos ? 'Seluruh bukti foto perbaikan telah lengkap' : 'Lengkapi foto bukti perbaikan untuk semua butir'}
@@ -247,7 +252,11 @@ export default function Correction({ inspection }) {
                         <button
                             type="submit"
                             disabled={processing || !hasAllPhotos}
-                            className="inline-flex items-center gap-2 rounded-xl bg-[var(--k3-navy)] px-6 py-3 text-sm font-bold text-white shadow-md transition hover:bg-[var(--k3-navy)]/90 disabled:cursor-not-allowed disabled:opacity-50"
+                            className={`inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold shadow-md transition cursor-pointer active:scale-95 ${
+                                hasAllPhotos && !processing
+                                    ? 'bg-[#f59e0b] hover:bg-[#d97706] text-white'
+                                    : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                            }`}
                         >
                             <Send className="w-4 h-4" />
                             {processing ? 'Mengirim ke Inspektor...' : 'Kirim Perbaikan ke Inspektor EHS'}
@@ -255,6 +264,6 @@ export default function Correction({ inspection }) {
                     </div>
                 </form>
             </div>
-        </div>
+        </AuthenticatedLayout>
     );
 }

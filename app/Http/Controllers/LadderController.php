@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Ladder;
 use App\Models\User;
 use App\Models\LocationInspectorMapping;
+use App\Models\SystemSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -16,7 +17,7 @@ class LadderController extends Controller
      */
     public function index()
     {
-        $ladders = Ladder::with('latestInspection')->latest()->get();
+        $ladders = Ladder::with(['latestInspection.inspector', 'inspector'])->latest()->get();
         
         return Inertia::render('Dashboard', [
             'ladders' => $ladders
@@ -156,6 +157,7 @@ class LadderController extends Controller
                 'description' => $ladder->description, // Ditambahkan agar deskripsi ikut tampil
             ],
             'latestInspection' => $latestInspectionData,
+            'checklistConfig' => SystemSetting::getActiveChecklists(),
         ]);
     }
 

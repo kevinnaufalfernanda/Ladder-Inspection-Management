@@ -1,20 +1,28 @@
 import { Link, usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import {
-    Menu,
-    X,
+    LayoutGrid,
+    Database,
+    RotateCcw,
+    CheckCheck,
+    Settings,
     LogOut,
     User as UserIcon,
     ChevronDown,
-    ShieldCheck,
+    ChevronLeft,
+    ChevronRight,
     Bell,
     Search,
     Trash2,
-    Clock,
+    X,
     ExternalLink,
+    Menu,
+    MapPin,
+    Check,
+    ShieldCheck,
+    Sliders,
 } from 'lucide-react';
 
-// Format waktu standar K3 Indonesia: e.g. "25 Okt 2026, 18.18 WIB"
 function formatNotificationTime(dateString) {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -28,7 +36,6 @@ function formatNotificationTime(dateString) {
     );
 }
 
-// Meta badge dan pengirim selaras dengan status K3 pada aplikasi
 function getNotificationMeta(notif) {
     const msg = (notif.data?.message || '').toLowerCase();
     const isUnread = !notif.read_at;
@@ -64,12 +71,11 @@ function getNotificationMeta(notif) {
     };
 }
 
-export default function AuthenticatedLayout({ children }) {
+export default function AuthenticatedLayout({ children, breadcrumb, breadcrumbs }) {
     const user = usePage().props.auth?.user;
     const recentNotifications = usePage().props.recent_notifications;
     const pageNotifications = usePage().props.notifications;
 
-    // Menjamin notifications selalu berupa array aman
     const notifications = Array.isArray(recentNotifications)
         ? recentNotifications
         : Array.isArray(pageNotifications)
@@ -79,17 +85,33 @@ export default function AuthenticatedLayout({ children }) {
         : [];
 
     const unreadCount = usePage().props.unread_notifications_count || 0;
+    const pendingReviewsCount = usePage().props.pending_reviews_count || 0;
+
+    const [isCollapsed, setIsCollapsed] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('safeladder_sidebar_collapsed') === 'true';
+        }
+        return false;
+    });
+
     const [mobileOpen, setMobileOpen] = useState(false);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const [notificationsOpen, setNotificationsOpen] = useState(false);
-
-    // Filter tab: 'all', 'unread', 'read' (selaras dengan filter K3 sebelumnya)
     const [filterTab, setFilterTab] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
 
     const userMenuRef = useRef(null);
 
-    // Close user menu on outside click & Escape key
+    const toggleSidebar = () => {
+        setIsCollapsed((prev) => {
+            const next = !prev;
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('safeladder_sidebar_collapsed', String(next));
+            }
+            return next;
+        });
+    };
+
     useEffect(() => {
         function handleClickOutside(event) {
             if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
@@ -111,7 +133,137 @@ export default function AuthenticatedLayout({ children }) {
         };
     }, []);
 
-    // Filter notifikasi sesuai tab 'all', 'unread', 'read' dan search query
+    const roleLabel = user?.role === 'admin'
+        ? 'Admin EHS'
+        : user?.role === 'inspector'
+        ? 'Inspektor EHS'
+        : 'PIC Safety';
+
+    // Penentuan breadcrumb hirarkis otomatis & interaktif jika tidak disediakan manual
+    const resolvedBreadcrumbs = (() => {
+        if (Array.isArray(breadcrumbs) && breadcrumbs.length > 0) {
+            return breadcrumbs.map((c) => (typeof c === 'string' ? { label: c } : c));
+        }
+
+        try {
+            if (breadcrumb) {
+                if (breadcrumb === 'Detail Aset') {
+                    return [
+                        { label: 'Data Aset', href: route('ladders.index') },
+                        { label: 'Detail Aset' },
+                    ];
+                }
+                if (breadcrumb === 'Tambah Aset' || breadcrumb === 'Identifikasi Aset') {
+                    return [
+                        { label: 'Data Aset', href: route('ladders.index') },
+                        { label: 'Tambah Aset' },
+                    ];
+                }
+                if (breadcrumb === 'Formulir Inspeksi') {
+                    return [
+                        { label: 'Data Aset', href: route('ladders.index') },
+                        { label: 'Formulir Inspeksi' },
+                    ];
+                }
+                if (breadcrumb === 'Perbaikan Aset') {
+                    return [
+                        { label: 'Data Aset', href: route('ladders.index') },
+                        { label: 'Perbaikan Aset' },
+                    ];
+                }
+                if (breadcrumb === 'Detail Review') {
+                    return [
+                        { label: 'Review Aset', href: route('inspections.review.queue') },
+                        { label: 'Detail Review' },
+                    ];
+                }
+                if (breadcrumb === 'Pusat Notifikasi') {
+                    return [{ label: 'Pusat Notifikasi' }];
+                }
+                return [{ label: breadcrumb }];
+            }
+
+            if (route().current('ladders.show')) {
+                return [
+                    { label: 'Data Aset', href: route('ladders.index') },
+                    { label: 'Detail Aset' },
+                ];
+            }
+            if (route().current('ladders.create')) {
+                return [
+                    { label: 'Data Aset', href: route('ladders.index') },
+                    { label: 'Tambah Aset' },
+                ];
+            }
+            if (route().current('inspections.create')) {
+                return [
+                    { label: 'Data Aset', href: route('ladders.index') },
+                    { label: 'Formulir Inspeksi' },
+                ];
+            }
+            if (route().current('inspections.correction')) {
+                return [
+                    { label: 'Data Aset', href: route('ladders.index') },
+                    { label: 'Perbaikan Aset' },
+                ];
+            }
+            if (route().current('inspections.review')) {
+                return [
+                    { label: 'Review Aset', href: route('inspections.review.queue') },
+                    { label: 'Detail Review' },
+                ];
+            }
+            if (route().current('ladders.index')) return [{ label: 'Data Aset' }];
+            if (route().current('inspections.history')) return [{ label: 'Riwayat Aset' }];
+            if (route().current('inspections.review.queue')) return [{ label: 'Review Aset' }];
+            if (route().current('settings.*')) return [{ label: 'Pengaturan' }];
+            if (route().current('profile.edit')) return [{ label: 'Profil Pengguna' }];
+        } catch (e) {
+            // fallback
+        }
+        return [{ label: 'Dashboard' }];
+    })();
+
+    // Navigasi menu utama SafeLadder
+    const navItems = [
+        {
+            name: 'Dashboard',
+            href: route('dashboard'),
+            active: route().current('dashboard'),
+            icon: LayoutGrid,
+        },
+        {
+            name: 'Data Aset',
+            href: route('ladders.index'),
+            active:
+                route().current('ladders.*') ||
+                route().current('inspections.create') ||
+                route().current('inspections.correction'),
+            icon: Database,
+        },
+        {
+            name: 'Riwayat Aset',
+            href: route('inspections.history'),
+            active: route().current('inspections.history'),
+            icon: RotateCcw,
+        },
+        {
+            name: 'Review Aset',
+            href: route('inspections.review.queue'),
+            active: route().current('inspections.review*'),
+            icon: CheckCheck,
+            badge: pendingReviewsCount > 0 ? pendingReviewsCount : null,
+            visible: user?.role !== 'pic_safety',
+        },
+        {
+            name: 'Pengaturan',
+            href: route('settings.index'),
+            active: route().current('settings.*'),
+            icon: Settings,
+            visible: user?.role !== 'pic_safety',
+        },
+    ].filter((item) => item.visible !== false);
+
     const filteredNotifications = notifications.filter((notif) => {
         if (filterTab === 'unread' && notif.read_at) return false;
         if (filterTab === 'read' && !notif.read_at) return false;
@@ -126,282 +278,363 @@ export default function AuthenticatedLayout({ children }) {
     });
 
     return (
-        <div className="k3-shell font-sans text-[var(--k3-text)]">
-            <nav className="k3-topbar sticky top-0 z-40 w-full">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="flex h-16 items-center justify-between">
-                        <Link href="/dashboard" className="flex items-center gap-3">
-                            <div className="k3-brand-mark flex h-9 w-9 items-center justify-center rounded-xl shadow-xs">
-                                <ShieldCheck className="h-5 w-5" />
-                            </div>
-                            <div className="leading-none">
-                                <span className="block text-sm font-extrabold tracking-tight text-[var(--k3-navy)]">
-                                    Ladder Inspection
-                                </span>
-                                <span className="mt-1 block text-[9px] font-bold uppercase tracking-[0.24em] text-[var(--k3-brand)]">
-                                    Management
-                                </span>
-                            </div>
-                        </Link>
+        <div className="min-h-screen bg-[#f8fafc] text-slate-800 font-sans flex flex-col antialiased">
+            <div className="flex flex-1 w-full">
 
-                        {/* Desktop nav */}
-                        <div className="hidden items-center gap-1 sm:flex">
-                            <Link
-                                href={route('dashboard')}
-                                className={`k3-nav-link rounded-xl px-4 py-2 text-sm font-semibold ${
-                                    route().current('dashboard') ? 'k3-nav-link-active' : ''
-                                }`}
-                            >
-                                Dashboard
-                            </Link>
-                            <Link
-                                href={route('ladders.index')}
-                                className={`k3-nav-link rounded-xl px-4 py-2 text-sm font-semibold ${
-                                    route().current('ladders.*') ? 'k3-nav-link-active' : ''
-                                }`}
-                            >
-                                Data Aset
-                            </Link>
-                            <Link
-                                href="/inspections/history"
-                                className={`k3-nav-link rounded-xl px-4 py-2 text-sm font-semibold ${
-                                    window.location.pathname.includes('/inspections/history')
-                                        ? 'k3-nav-link-active'
-                                        : ''
-                                }`}
-                            >
-                                Riwayat Inspeksi
-                            </Link>
-                            {(user?.role === 'admin' || user?.role === 'inspector') && (
-                                <Link
-                                    href={route('inspections.review.queue')}
-                                    className={`k3-nav-link rounded-xl px-4 py-2 text-sm font-semibold ${
-                                        route().current('inspections.review*') ? 'k3-nav-link-active' : ''
-                                    }`}
-                                >
-                                    Review Inspeksi
+                {/* ========================================================================= */}
+                {/* 1. SIDEBAR KIRI (DESKTOP) DENGAN SENTUHAN INTERAKTIF COLLAPSE/EXPAND     */}
+                {/* ========================================================================= */}
+                <aside
+                    className={`hidden lg:flex flex-col bg-white border-r border-slate-200/80 transition-all duration-300 ease-in-out shrink-0 z-30 sticky top-0 h-screen ${
+                        isCollapsed ? 'w-20' : 'w-64'
+                    }`}
+                >
+                    {/* Header Sidebar: Brand SafeLadder & Toggle */}
+                    <div className={`h-16 flex items-center border-b border-slate-100 ${
+                        isCollapsed ? 'justify-center' : 'justify-between px-5'
+                    }`}>
+                        {!isCollapsed ? (
+                            <>
+                                <Link href={route('dashboard')} className="flex items-center gap-1 group">
+                                    <span className="text-xl font-black tracking-tight text-[#0f172a] group-hover:text-amber-600 transition">
+                                        Safe
+                                    </span>
+                                    <span className="text-xl font-black tracking-tight text-[#f59e0b]">
+                                        Ladder
+                                    </span>
                                 </Link>
-                            )}
-                        </div>
 
-                        {/* User menu & Notifikasi Trigger Desktop */}
-                        <div className="hidden items-center gap-2 sm:flex">
+                                <button
+                                    type="button"
+                                    onClick={toggleSidebar}
+                                    title="Ciutkan Menu Sidebar"
+                                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200/80 bg-white text-slate-400 hover:text-slate-800 hover:bg-slate-50 hover:border-slate-300 transition shadow-2xs cursor-pointer active:scale-95"
+                                >
+                                    <ChevronLeft className="h-3.5 w-3.5" />
+                                </button>
+                            </>
+                        ) : (
                             <button
                                 type="button"
-                                onClick={() => {
-                                    setNotificationsOpen(true);
-                                    setUserMenuOpen(false);
-                                }}
-                                className={`relative flex h-10 w-10 items-center justify-center rounded-xl border shadow-sm transition cursor-pointer ${
-                                    notificationsOpen
-                                        ? 'border-[var(--k3-brand-strong)] bg-emerald-50 text-[var(--k3-brand-strong)]'
-                                        : 'border-[var(--k3-line)] bg-white text-[var(--k3-brand-strong)] hover:border-[var(--k3-brand)]'
-                                }`}
-                                title="Buka Notifikasi K3"
+                                onClick={toggleSidebar}
+                                title="Buka / Perluas Menu Sidebar"
+                                className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-500 hover:text-slate-900 hover:bg-slate-50 hover:border-slate-300 transition shadow-2xs cursor-pointer active:scale-95"
                             >
-                                <Bell className="h-4 w-4" />
+                                <ChevronRight className="h-4 w-4" />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Daftar Menu Navigasi Utama */}
+                    <nav className="flex-1 p-3.5 space-y-1.5 overflow-y-auto">
+                        {navItems.map((item) => {
+                            const IconComponent = item.icon;
+                            return (
+                                <Link
+                                    key={item.name}
+                                    href={item.href}
+                                    title={isCollapsed ? item.name : undefined}
+                                    className={`relative flex items-center gap-3.5 rounded-2xl px-3.5 py-3 text-sm font-semibold transition-all duration-150 ${
+                                        item.active
+                                            ? 'bg-[#fff8eb] text-[#854d0e] font-bold shadow-2xs border border-amber-200/70'
+                                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                                    } ${isCollapsed ? 'justify-center px-0' : ''}`}
+                                >
+                                    <IconComponent
+                                        className={`h-5 w-5 shrink-0 transition-transform ${
+                                            item.active ? 'text-[#f59e0b] scale-105' : 'text-slate-400'
+                                        }`}
+                                    />
+                                    {!isCollapsed && (
+                                        <span className="truncate flex-1">{item.name}</span>
+                                    )}
+                                    {!isCollapsed && item.badge && (
+                                        <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                                            {item.badge}
+                                        </span>
+                                    )}
+                                    {isCollapsed && item.badge && (
+                                        <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
+                                    )}
+                                </Link>
+                            );
+                        })}
+                    </nav>
+                </aside>
+
+                {/* ========================================================================= */}
+                {/* 2. AREA WORKSPACE KANAN                                                   */}
+                {/* ========================================================================= */}
+                <div className="flex-1 flex flex-col min-w-0">
+
+                    {/* Top Header Bar */}
+                    <header className="h-16 bg-[#f8fafc] border-b border-slate-200/80 px-4 sm:px-6 lg:px-8 flex items-center justify-between sticky top-0 z-20 backdrop-blur-md bg-opacity-90">
+                        {/* Kiri: Breadcrumb Navigasi & Mobile Toggle */}
+                        <div className="flex items-center gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setMobileOpen(true)}
+                                className="lg:hidden p-2 rounded-xl text-slate-600 hover:bg-white border border-slate-200 transition cursor-pointer"
+                                aria-label="Buka Menu"
+                            >
+                                <Menu className="h-5 w-5" />
+                            </button>
+
+                            <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+                                <Link
+                                    href={route('dashboard')}
+                                    className="hover:text-slate-700 hover:underline transition"
+                                    title="Kembali ke Dashboard Workspace"
+                                >
+                                    Workspace
+                                </Link>
+                                {resolvedBreadcrumbs.map((crumb, idx) => {
+                                    const isLast = idx === resolvedBreadcrumbs.length - 1;
+                                    return (
+                                        <div key={idx} className="flex items-center gap-1.5">
+                                            <span className="text-slate-300">/</span>
+                                            {crumb.href && !isLast ? (
+                                                <Link
+                                                    href={crumb.href}
+                                                    className="hover:text-slate-700 hover:underline transition"
+                                                    title={`Kembali ke ${crumb.label}`}
+                                                >
+                                                    {crumb.label}
+                                                </Link>
+                                            ) : (
+                                                <span className="font-semibold text-slate-800">
+                                                    {crumb.label}
+                                                </span>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Kanan: Notifikasi & User Dropdown */}
+                        <div className="flex items-center gap-3">
+
+                            {/* Tombol Notifikasi Cepat */}
+                            <button
+                                type="button"
+                                onClick={() => setNotificationsOpen((prev) => !prev)}
+                                className={`relative flex h-8 w-8 items-center justify-center rounded-xl border transition-all duration-150 shadow-2xs cursor-pointer active:scale-95 group ${
+                                    notificationsOpen
+                                        ? 'border-amber-500 bg-amber-500 text-white shadow-xs ring-2 ring-amber-300 ring-offset-1'
+                                        : 'border-slate-200 bg-white text-slate-600 hover:border-amber-300 hover:bg-amber-50/70 hover:text-amber-800'
+                                }`}
+                                title={notificationsOpen ? 'Tutup Notifikasi' : 'Lihat Notifikasi K3'}
+                                aria-label="Notifikasi K3"
+                            >
+                                <Bell className={`h-4 w-4 transition-transform duration-200 ${
+                                    notificationsOpen ? 'scale-110' : 'group-hover:scale-110 group-hover:rotate-6'
+                                }`} />
                                 {unreadCount > 0 && (
-                                    <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-bold text-white shadow-sm ring-2 ring-white">
-                                        {unreadCount > 99 ? '99+' : unreadCount}
+                                    <span className="absolute -top-1 -right-1 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-rose-500 text-[9px] font-bold text-white ring-2 ring-white shadow-xs animate-pulse">
+                                        {unreadCount > 9 ? '9+' : unreadCount}
                                     </span>
                                 )}
                             </button>
 
-                            {/* Menu Akun Pengguna */}
-                            <div ref={userMenuRef} className="relative">
+                            {/* Pill Akun Pengguna */}
+                            <div className="relative" ref={userMenuRef}>
                                 <button
                                     type="button"
-                                    onClick={() => {
-                                        setUserMenuOpen((prev) => !prev);
-                                        setNotificationsOpen(false);
-                                    }}
-                                    className="flex items-center gap-2 rounded-xl border border-[var(--k3-line)] bg-white px-3 py-2 text-sm font-semibold text-[var(--k3-text)] shadow-sm transition hover:border-[var(--k3-brand)] cursor-pointer"
+                                    onClick={() => setUserMenuOpen((prev) => !prev)}
+                                    className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white pl-2.5 pr-3 py-1 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 transition cursor-pointer"
                                 >
-                                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--k3-accent-soft)]">
-                                        <UserIcon className="h-3.5 w-3.5 text-[var(--k3-brand-strong)]" />
+                                    <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[var(--sl-navy)] text-amber-400 text-xs font-black">
+                                        {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
                                     </div>
-                                    <span>{user?.name}</span>
-                                    <ChevronDown className="h-3.5 w-3.5 text-[var(--k3-muted)]" />
+                                    <div className="text-left hidden sm:block">
+                                        <p className="font-bold text-slate-900 text-xs leading-none">
+                                            {user?.name || 'User'}
+                                        </p>
+                                        <p className="text-[10px] text-slate-500 leading-none mt-0.5">
+                                            {roleLabel} • PT Wilmar Nabati
+                                        </p>
+                                    </div>
+                                    <ChevronDown className="h-3.5 w-3.5 text-slate-400 ml-1" />
                                 </button>
 
                                 {userMenuOpen && (
-                                    <div className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl z-50">
-                                        <Link
-                                            href={route('profile.edit')}
-                                            onClick={() => setUserMenuOpen(false)}
-                                            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 cursor-pointer"
-                                        >
-                                            <UserIcon className="h-4 w-4 text-slate-400" />
-                                            Profil Saya
-                                        </Link>
-                                        <Link
-                                            href={route('logout')}
-                                            method="post"
-                                            as="button"
-                                            onClick={() => setUserMenuOpen(false)}
-                                            className="mt-0.5 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-rose-600 hover:bg-rose-50 cursor-pointer"
-                                        >
-                                            <LogOut className="h-4 w-4" />
-                                            Keluar
-                                        </Link>
+                                    <div className="absolute right-0 mt-2 w-64 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl z-50 sl-animate-pop-in">
+                                        <div className="px-3 py-2.5 border-b border-slate-100">
+                                            <p className="font-bold text-slate-900 text-sm">{user?.name}</p>
+                                            <p className="text-xs text-slate-500 font-mono">{user?.email}</p>
+                                            <span className="mt-1.5 inline-block rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800 border border-amber-200">
+                                                {roleLabel}
+                                            </span>
+                                        </div>
+
+                                        <div className="py-1 space-y-0.5">
+                                            <Link
+                                                href={route('profile.edit')}
+                                                onClick={() => setUserMenuOpen(false)}
+                                                className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                                            >
+                                                <UserIcon className="h-4 w-4 text-slate-400" /> Profil Pengguna
+                                            </Link>
+                                            {user?.role !== 'pic_safety' && (
+                                                <Link
+                                                    href={route('settings.index')}
+                                                    onClick={() => setUserMenuOpen(false)}
+                                                    className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                                                >
+                                                    <Sliders className="h-4 w-4 text-slate-400" /> Pengaturan Sistem
+                                                </Link>
+                                            )}
+                                        </div>
+
+                                        <div className="border-t border-slate-100 pt-1">
+                                            <Link
+                                                href={route('logout')}
+                                                method="post"
+                                                as="button"
+                                                className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 transition cursor-pointer text-left"
+                                            >
+                                                <LogOut className="h-4 w-4 text-rose-500" /> Keluar Sesi
+                                            </Link>
+                                        </div>
                                     </div>
                                 )}
                             </div>
-                        </div>
 
-                        {/* Mobile Actions: Notifikasi & Hamburger */}
-                        <div className="flex items-center gap-2 sm:hidden">
-                            <button
-                                type="button"
-                                onClick={() => setNotificationsOpen(true)}
-                                className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--k3-line)] bg-white text-[var(--k3-brand-strong)] shadow-sm cursor-pointer"
-                                title="Buka Notifikasi K3"
-                            >
-                                <Bell className="h-4 w-4" />
-                                {unreadCount > 0 && (
-                                    <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[9px] font-bold text-white shadow-sm">
-                                        {unreadCount > 99 ? '99+' : unreadCount}
-                                    </span>
-                                )}
-                            </button>
-                            <button
-                                onClick={() => setMobileOpen(!mobileOpen)}
-                                className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--k3-line)] bg-white text-[var(--k3-navy)] cursor-pointer"
-                            >
-                                {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-                            </button>
                         </div>
-                    </div>
+                    </header>
+
+                    {/* Konten Halaman */}
+                    <main className="flex-1">
+                        {children}
+                    </main>
+
+                    {/* Footer Standar SafeLadder Sesuai Gambar */}
+                    <footer className="px-6 sm:px-8 py-5 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-3 text-[11px] text-slate-400 font-medium">
+                        <div>
+                            SafeLadder • Sistem monitoring keselamatan kerja tangga
+                        </div>
+                        <div>
+                            Standar F-GRK/EHS Wilmar
+                        </div>
+                    </footer>
+
                 </div>
+            </div>
 
-                {/* Mobile menu */}
-                {mobileOpen && (
-                    <div className="border-t border-white/10 bg-slate-800 sm:hidden">
-                        <div className="space-y-1 px-4 py-3">
-                            <Link
-                                href={route('dashboard')}
-                                className="block rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-200 hover:bg-white/5"
-                            >
-                                Dashboard
-                            </Link>
-                            <Link
-                                href={route('ladders.index')}
-                                className="block rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-200 hover:bg-white/5"
-                            >
-                                Data Aset
-                            </Link>
-                            <Link
-                                href="/inspections/history"
-                                className="block rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-200 hover:bg-white/5"
-                            >
-                                Riwayat Inspeksi
-                            </Link>
-                            {(user?.role === 'admin' || user?.role === 'inspector') && (
-                                <Link
-                                    href={route('inspections.review.queue')}
-                                    className="block rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-200 hover:bg-white/5"
-                                >
-                                    Review Inspeksi
-                                </Link>
-                            )}
+            {/* ========================================================================= */}
+            {/* DRAWER MENU MOBILE (< lg)                                                */}
+            {/* ========================================================================= */}
+            {mobileOpen && (
+                <div className="fixed inset-0 z-50 lg:hidden flex">
+                    <div
+                        className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity"
+                        onClick={() => setMobileOpen(false)}
+                    />
+                    <div className="relative w-72 bg-white h-full flex flex-col p-5 shadow-2xl z-10 animate-in slide-in-from-left">
+                        <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                            <div className="flex items-center gap-1">
+                                <span className="text-xl font-black text-[#0f172a]">Safe</span>
+                                <span className="text-xl font-black text-[#f59e0b]">Ladder</span>
+                            </div>
                             <button
                                 type="button"
-                                onClick={() => {
-                                    setNotificationsOpen(true);
-                                    setMobileOpen(false);
-                                }}
-                                className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-slate-200 hover:bg-white/5 cursor-pointer"
+                                onClick={() => setMobileOpen(false)}
+                                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
                             >
-                                <span>Pusat Notifikasi K3</span>
-                                {unreadCount > 0 && (
-                                    <span className="rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-white">
-                                        {unreadCount}
-                                    </span>
-                                )}
+                                <X className="h-5 w-5" />
                             </button>
-                            <Link
-                                href={route('profile.edit')}
-                                className="block rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-200 hover:bg-white/5"
-                            >
-                                Profil Saya
-                            </Link>
+                        </div>
+
+                        <nav className="mt-4 space-y-1.5 flex-1">
+                            {navItems.map((item) => {
+                                const IconComp = item.icon;
+                                return (
+                                    <Link
+                                        key={item.name}
+                                        href={item.href}
+                                        onClick={() => setMobileOpen(false)}
+                                        className={`flex items-center justify-between rounded-xl px-3.5 py-2.5 text-sm font-semibold transition ${
+                                            item.active
+                                                ? 'bg-[#fff8eb] text-[#854d0e] font-bold border border-amber-200'
+                                                : 'text-slate-600 hover:bg-slate-50'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <IconComp className={`h-5 w-5 ${item.active ? 'text-[#f59e0b]' : 'text-slate-400'}`} />
+                                            <span>{item.name}</span>
+                                        </div>
+                                        {item.badge && (
+                                            <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                                                {item.badge}
+                                            </span>
+                                        )}
+                                    </Link>
+                                );
+                            })}
+                        </nav>
+
+                        <div className="pt-4 border-t border-slate-100">
                             <Link
                                 href={route('logout')}
                                 method="post"
                                 as="button"
-                                className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-rose-300 hover:bg-white/5 cursor-pointer"
+                                className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50"
                             >
                                 <LogOut className="h-4 w-4" /> Keluar
                             </Link>
                         </div>
                     </div>
-                )}
-            </nav>
+                </div>
+            )}
 
-            {/* FLOATING RIGHT NOTIFICATIONS DRAWER (TEMA & TYPOGRAFI K3) */}
+            {/* ========================================================================= */}
+            {/* FLOATING NOTIFICATIONS DRAWER                                             */}
+            {/* ========================================================================= */}
             {notificationsOpen && (
                 <>
-                    {/* Backdrop */}
                     <div
-                        className="fixed inset-0 z-50 bg-slate-900/30 backdrop-blur-[2px] transition-opacity animate-in fade-in"
+                        className="fixed inset-0 z-50 bg-slate-900/30 backdrop-blur-xs sl-animate-fade-in"
                         onClick={() => setNotificationsOpen(false)}
                     />
-
-                    {/* Floating Panel on the Right */}
-                    <div
-                        className="fixed top-3 right-3 bottom-3 z-50 w-[420px] sm:w-[460px] max-w-[calc(100vw-1.5rem)] rounded-2xl bg-white shadow-2xl border border-[var(--k3-line)] flex flex-col overflow-hidden animate-in slide-in-from-right duration-200"
-                    >
-                        {/* Header Panel K3 */}
-                        <div className="bg-[var(--k3-surface)] border-b border-[var(--k3-line)] px-5 py-4 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="k3-brand-mark flex h-8 w-8 items-center justify-center rounded-xl shadow-xs">
+                    <div className="fixed top-3 right-3 bottom-3 z-50 w-[420px] max-w-[calc(100vw-1.5rem)] rounded-3xl bg-white shadow-2xl border border-slate-200 flex flex-col overflow-hidden sl-animate-drawer-in">
+                        <div className="bg-slate-50/80 border-b border-slate-200 px-5 py-4 flex items-center justify-between">
+                            <div className="flex items-center gap-2.5">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-600 border border-amber-200">
                                     <Bell className="h-4 w-4" />
                                 </div>
                                 <div>
                                     <div className="flex items-center gap-2">
-                                        <h2 className="text-base font-bold text-[var(--k3-navy)]">Notifikasi Masuk</h2>
+                                        <h3 className="text-sm font-black text-slate-900">Notifikasi K3</h3>
                                         {unreadCount > 0 && (
                                             <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-700">
                                                 {unreadCount} baru
                                             </span>
                                         )}
                                     </div>
-                                    <p className="text-[11px] text-[var(--k3-muted)]">Log aktivitas inspeksi dan review K3</p>
+                                    <p className="text-[11px] text-slate-500">Log aktivitas inspeksi dan review K3</p>
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-2.5">
-                                {unreadCount > 0 && (
-                                    <Link
-                                        href={route('notifications.markAllRead')}
-                                        method="post"
-                                        as="button"
-                                        className="text-xs font-bold text-[var(--k3-brand-strong)] hover:text-[var(--k3-navy)] hover:underline cursor-pointer"
-                                    >
-                                        Tandai semua dibaca
-                                    </Link>
-                                )}
-                                <button
-                                    type="button"
-                                    onClick={() => setNotificationsOpen(false)}
-                                    className="flex h-8 w-8 items-center justify-center rounded-xl border border-[var(--k3-line)] bg-white text-slate-500 hover:text-[var(--k3-navy)] hover:border-[var(--k3-brand)] transition cursor-pointer"
-                                    title="Tutup Notifikasi"
-                                >
-                                    <X className="h-4 w-4" />
-                                </button>
-                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setNotificationsOpen(false)}
+                                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
                         </div>
 
-                        {/* Filter Tabs (Sesuai K3: Semua, Belum Dibaca, Sudah Dibaca) */}
-                        <div className="bg-white border-b border-[var(--k3-line)] px-5 py-3">
-                            <div className="flex flex-wrap gap-1.5">
+                        {/* Filter tabs & Tandai Semua Dibaca */}
+                        <div className="p-3 border-b border-slate-100 flex items-center justify-between gap-2">
+                            <div className="flex gap-1.5">
                                 <button
                                     type="button"
                                     onClick={() => setFilterTab('all')}
-                                    className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
+                                    className={`rounded-xl px-3 py-1.5 text-xs font-semibold cursor-pointer transition active:scale-95 ${
                                         filterTab === 'all'
-                                            ? 'bg-[var(--k3-navy)] text-white shadow-xs'
-                                            : 'bg-[var(--k3-accent-soft)] text-[var(--k3-brand-strong)] hover:bg-[var(--k3-accent)]'
+                                            ? 'bg-[#0f172a] text-white shadow-xs'
+                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                                     }`}
                                 >
                                     Semua ({notifications.length})
@@ -409,129 +642,95 @@ export default function AuthenticatedLayout({ children }) {
                                 <button
                                     type="button"
                                     onClick={() => setFilterTab('unread')}
-                                    className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
+                                    className={`rounded-xl px-3 py-1.5 text-xs font-semibold cursor-pointer transition active:scale-95 ${
                                         filterTab === 'unread'
-                                            ? 'bg-[var(--k3-navy)] text-white shadow-xs'
-                                            : 'bg-[var(--k3-accent-soft)] text-[var(--k3-brand-strong)] hover:bg-[var(--k3-accent)]'
+                                            ? 'bg-[#0f172a] text-white shadow-xs'
+                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                                     }`}
                                 >
                                     Belum Dibaca ({unreadCount})
                                 </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setFilterTab('read')}
-                                    className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
-                                        filterTab === 'read'
-                                            ? 'bg-[var(--k3-navy)] text-white shadow-xs'
-                                            : 'bg-[var(--k3-accent-soft)] text-[var(--k3-brand-strong)] hover:bg-[var(--k3-accent)]'
-                                    }`}
+                            </div>
+
+                            {unreadCount > 0 && (
+                                <Link
+                                    href={route('notifications.markAllRead')}
+                                    method="post"
+                                    as="button"
+                                    className="text-[11px] font-bold text-amber-700 hover:text-amber-800 hover:underline cursor-pointer"
+                                    title="Tandai seluruh notifikasi telah dibaca"
                                 >
-                                    Sudah Dibaca ({notifications.filter((n) => n.read_at).length})
-                                </button>
-                            </div>
+                                    Tandai semua dibaca
+                                </Link>
+                            )}
                         </div>
 
-                        {/* Search Bar K3 */}
-                        <div className="bg-[var(--k3-surface)] border-b border-[var(--k3-line)] px-5 py-2.5">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                                <input
-                                    type="text"
-                                    placeholder="Cari riwayat notifikasi..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full rounded-xl border border-[var(--k3-line)] bg-white py-1.5 pl-9 pr-3 text-xs text-slate-800 placeholder:text-slate-400 focus:border-[var(--k3-brand)] focus:ring-1 focus:ring-[var(--k3-brand)] focus:outline-none transition"
-                                />
-                            </div>
-                        </div>
-
-                        {/* List Notifikasi K3 */}
-                        <div className="flex-1 overflow-y-auto px-4 py-3 divide-y divide-slate-100 space-y-2 bg-[var(--k3-bg)]/40">
+                        {/* Notification list */}
+                        <div className="flex-1 overflow-y-auto p-3 space-y-2">
                             {filteredNotifications.length === 0 ? (
-                                <div className="py-20 text-center text-slate-400">
-                                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400 mb-3">
-                                        <Bell className="h-6 w-6" />
+                                <div className="py-16 text-center space-y-2">
+                                    <div className="w-10 h-10 mx-auto rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                                        <Bell className="w-5 h-5" />
                                     </div>
-                                    <p className="text-sm font-bold text-slate-700">Tidak ada notifikasi</p>
-                                    <p className="text-xs text-slate-400 mt-1">
-                                        {searchQuery || filterTab !== 'all'
-                                            ? 'Tidak ada notifikasi yang sesuai filter ini.'
-                                            : 'Pemberitahuan baru akan muncul otomatis di sini.'}
+                                    <p className="text-xs font-semibold text-slate-600">
+                                        Tidak ada notifikasi {filterTab === 'unread' ? 'yang belum dibaca' : ''}
+                                    </p>
+                                    <p className="text-[11px] text-slate-400">
+                                        Aktivitas inspeksi dan review terbaru akan muncul di sini.
                                     </p>
                                 </div>
                             ) : (
                                 filteredNotifications.map((notif) => {
                                     const meta = getNotificationMeta(notif);
-                                    const isUnread = !notif.read_at;
-                                    const formattedTime = formatNotificationTime(notif.created_at);
-
                                     return (
-                                        <div
+                                        <Link
                                             key={notif.id}
-                                            className={`rounded-xl border p-4 transition shadow-2xs ${
-                                                isUnread
-                                                    ? 'bg-white border-[var(--k3-brand)]/40 shadow-xs ring-1 ring-[var(--k3-brand)]/15'
-                                                    : 'bg-white/80 border-[var(--k3-line)] hover:bg-white'
+                                            href={route('notifications.read', notif.id)}
+                                            method="post"
+                                            as="button"
+                                            onClick={() => setNotificationsOpen(false)}
+                                            className={`w-full text-left p-3.5 rounded-2xl transition-all duration-150 flex items-start gap-3 cursor-pointer group active:scale-[0.99] border ${
+                                                notif.read_at
+                                                    ? 'bg-white hover:bg-slate-50/90 border-slate-100 hover:border-slate-200'
+                                                    : 'bg-amber-50/50 hover:bg-amber-50/90 border-amber-200/80 shadow-2xs'
                                             }`}
                                         >
-                                            <div className="flex items-start gap-3">
-                                                <div
-                                                    className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl shadow-xs ${
-                                                        isUnread
-                                                            ? 'k3-brand-mark'
-                                                            : 'bg-slate-100 text-slate-500'
-                                                    }`}
-                                                >
-                                                    <Bell className="h-4 w-4" />
+                                            {/* Status Dot */}
+                                            <div className="mt-1.5 shrink-0">
+                                                {!notif.read_at ? (
+                                                    <span className="flex h-2 w-2 rounded-full bg-amber-500 ring-4 ring-amber-100" />
+                                                ) : (
+                                                    <span className="flex h-1.5 w-1.5 rounded-full bg-slate-300" />
+                                                )}
+                                            </div>
+
+                                            <div className="flex-1 min-w-0 space-y-1">
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <span className={`rounded-md px-2 py-0.5 text-[9px] font-bold ${meta.badgeClass}`}>
+                                                        {meta.tagLabel}
+                                                    </span>
+                                                    <span className="text-[10px] text-slate-400 font-mono">
+                                                        {formatNotificationTime(notif.created_at)}
+                                                    </span>
                                                 </div>
-
-                                                <div className="flex-1 min-w-0 space-y-1.5">
-                                                    <div className="flex items-start justify-between gap-2">
-                                                        <p className="text-xs font-bold text-[var(--k3-navy)]">
-                                                            {meta.sender}
-                                                        </p>
-                                                        <span className="flex items-center gap-1 text-[10px] text-slate-400 shrink-0 font-medium">
-                                                            <Clock className="h-3 w-3" />
-                                                            {formattedTime}
+                                                <p className={`text-xs leading-snug line-clamp-2 ${
+                                                    notif.read_at ? 'text-slate-700 font-medium' : 'text-slate-900 font-bold'
+                                                }`}>
+                                                    {notif.data?.message || 'Pemberitahuan K3'}
+                                                </p>
+                                                <div className="flex items-center justify-between pt-0.5">
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 group-hover:text-amber-800">
+                                                        <span>Buka halaman terkait</span>
+                                                        <ChevronRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
+                                                    </span>
+                                                    {!notif.read_at && (
+                                                        <span className="text-[9px] font-bold text-amber-800 bg-amber-100 px-1.5 py-0.2 rounded">
+                                                            Baru
                                                         </span>
-                                                    </div>
-
-                                                    <p className="text-xs text-slate-700 leading-relaxed font-normal">
-                                                        {notif.data?.message}
-                                                    </p>
-
-                                                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-100/80">
-                                                        <span
-                                                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${meta.badgeClass}`}
-                                                        >
-                                                            {meta.tagLabel}
-                                                        </span>
-
-                                                        <div className="flex items-center gap-1.5">
-                                                            <Link
-                                                                href={route('notifications.read', notif.id)}
-                                                                method="post"
-                                                                as="button"
-                                                                onClick={() => setNotificationsOpen(false)}
-                                                                className="inline-flex items-center gap-1 rounded-lg bg-[var(--k3-navy)] px-2.5 py-1 text-[11px] font-bold text-white transition hover:bg-[var(--k3-brand-strong)] shadow-xs cursor-pointer"
-                                                            >
-                                                                Buka / Tindak Lanjuti{' '}
-                                                                <ExternalLink className="h-3 w-3 text-[var(--k3-accent)]" />
-                                                            </Link>
-                                                            <Link
-                                                                href={route('notifications.destroy', notif.id)}
-                                                                method="delete"
-                                                                as="button"
-                                                                className="p-1 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-slate-100 transition cursor-pointer"
-                                                                title="Hapus notifikasi"
-                                                            >
-                                                                <Trash2 className="h-3.5 w-3.5" />
-                                                            </Link>
-                                                        </div>
-                                                    </div>
+                                                    )}
                                                 </div>
                                             </div>
-                                        </div>
+                                        </Link>
                                     );
                                 })
                             )}
@@ -539,8 +738,6 @@ export default function AuthenticatedLayout({ children }) {
                     </div>
                 </>
             )}
-
-            <main>{children}</main>
         </div>
     );
 }

@@ -8,6 +8,7 @@ use Inertia\Inertia;
 use App\Http\Controllers\LadderController;
 use App\Http\Controllers\InspectionController; // Diperbaiki: InspectionsController -> InspectionController
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\SettingController;
 
 Route::get('/', function () {
     return redirect()->route('dashboard');
@@ -51,6 +52,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('notifications.markAllRead');
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
     Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
+
+    // Pengaturan Sistem (Settings)
+    Route::prefix('settings')->name('settings.')->group(function () {
+        Route::get('/', [SettingController::class, 'index'])->name('index');
+        Route::post('/general', [SettingController::class, 'updateGeneral'])->name('general.update');
+        Route::post('/locations', [SettingController::class, 'storeLocation'])->name('locations.store');
+        Route::put('/locations/{location}', [SettingController::class, 'updateLocation'])->name('locations.update');
+        Route::delete('/locations/{location}', [SettingController::class, 'destroyLocation'])->name('locations.destroy');
+        Route::post('/users', [SettingController::class, 'storeUser'])->name('users.store');
+        Route::patch('/users/{user}/role', [SettingController::class, 'updateUserRole'])->name('users.role');
+        Route::post('/checklists', [SettingController::class, 'updateChecklists'])->name('checklists.update');
+        Route::post('/checklists/reset', [SettingController::class, 'resetChecklists'])->name('checklists.reset');
+    });
 
 });
 

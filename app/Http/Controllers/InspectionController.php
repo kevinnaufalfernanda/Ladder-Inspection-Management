@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Ladder;
 use App\Models\Inspection;
+use App\Models\SystemSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -18,7 +19,7 @@ class InspectionController extends Controller
 
         return Inertia::render('Inspections/Create', [
             'ladder' => $ladder,
-            'checklistConfig' => config('checklists'),
+            'checklistConfig' => SystemSetting::getActiveChecklists(),
             'latestInspection' => $ladder->latestInspection,
         ]);
     }
@@ -27,13 +28,14 @@ class InspectionController extends Controller
     {
         $validated = $request->validate([
             'status' => 'nullable|in:safe,unsafe',
-            'inspection_type' => 'required|in:portable,permanent',
+            'inspection_type' => 'nullable|in:portable,permanent',
             'checklist' => 'required|array',
             'checklist_comments' => 'nullable|array',
             'photos' => 'nullable|array',
             'notes' => 'nullable|string',
             'return_to' => 'nullable|in:detail,dashboard',
         ]);
+        $validated['inspection_type'] = $ladder->type;
 
         // Validasi format foto untuk item yang mengunggah foto
         if ($request->hasFile('photos')) {
@@ -95,7 +97,28 @@ class InspectionController extends Controller
         if ($request->hasFile('photos')) {
             foreach ($request->file('photos') as $key => $file) {
                 if ($file) {
+                    $request->validate([
+                        "photos.{$key}" => ['required', 'image', 'max:5120'],
+                    ]);
                     $photoPaths[$key] = $file->store("inspections/{$ladder->id}", 'public');
+                }
+            }
+        }
+
+        // Dokumentasi foto wajib jika opsi pengaturan require_photos_per_item aktif
+        $requirePhotos = (bool) SystemSetting::get('require_photos_per_item', true);
+        if ($requirePhotos) {
+            $checkedKeys = collect($validated['checklist'])
+                ->filter(fn ($v) => $v === true || $v === 1 || $v === '1' || $v === 'true')
+                ->keys();
+
+            foreach ($checkedKeys as $k) {
+                $hasFreshPhoto = $request->hasFile("photos.{$k}");
+                $hasExistingPhoto = !empty($photoPaths[$k]);
+                if (! $hasFreshPhoto && ! $hasExistingPhoto) {
+                    return back()->withErrors([
+                        "photos.{$k}" => 'Foto dokumentasi fisik lapangan wajib diunggah untuk butir ini.',
+                    ])->withInput();
                 }
             }
         }
@@ -193,14 +216,16 @@ class InspectionController extends Controller
     {
         abort_unless($request->user()->isInspector(), 403);
 
-        $query = Inspection::with(['ladder', 'submitter'])
-            ->whereIn('workflow_status', ['pending_review', 'needs_correction']);
+        $query = Inspection::with(['ladder', 'submitter', 'inspector', 'reviewer']);
 
         if (!$request->user()->isAdmin()) {
-            $query->where('inspector_id', $request->user()->id);
+            $query->where(function ($q) use ($request) {
+                $q->where('inspector_id', $request->user()->id)
+                  ->orWhere('reviewed_by_id', $request->user()->id);
+            });
         }
 
-        // Tampilkan 1 antrean per aset tangga (inspeksi paling baru) agar tidak menumpuk
+        // Tampilkan inspeksi terbaru per aset tangga agar inspektor dapat memantau aset yang menunggu review, lolos ACC, maupun temuan reject
         $inspections = $query->latest()
             ->get()
             ->unique('ladder_id')
@@ -219,7 +244,7 @@ class InspectionController extends Controller
                 ->with('info', 'Halaman review hasil inspeksi ditujukan khusus untuk Inspektor EHS.');
         }
 
-        abort_unless($request->user()->isInspector() && ($request->user()->isAdmin() || $inspection->inspector_id === $request->user()->id), 403);
+        abort_unless($request->user()->isInspector() && ($request->user()->isAdmin() || $inspection->inspector_id === $request->user()->id || $inspection->reviewed_by_id === $request->user()->id), 403);
 
         $inspection->load(['ladder', 'submitter']);
         $checklist = $inspection->checklist ?? [];
@@ -240,25 +265,122 @@ class InspectionController extends Controller
             $updatedKeys = array_keys(array_filter($photos));
         }
 
-        $items = collect($checklist)
-            ->filter(fn ($value, $key) => $key !== 'inspection_type' && $key !== 'photos' && $key !== 'comments' && $key !== 'updated_keys' && (is_bool($value) || $value === 1 || $value === 0 || $value === '1' || $value === '0'))
-            ->map(fn ($value, $key) => [
-                'key' => $key,
-                'label' => str($key)->replace('_', ' ')->title()->toString(),
-                'checked' => (bool) $value,
-                'pic_comment' => $checklist['comments'][$key] ?? '',
-                'photo_url' => (!empty($photos[$key])) ? Storage::disk('public')->url($photos[$key]) : null,
-                'decision' => $inspection->review_data[$key]['decision'] ?? null,
-                'comment' => $inspection->review_data[$key]['comment'] ?? '',
-            ])->values();
+        // Gabungkan foto dari riwayat sebelumnya jika butir tertentu belum memiliki foto di inspeksi ini
+        $prevInspections = $inspection->ladder->inspections()
+            ->where('id', '<', $inspection->id)
+            ->latest('id')
+            ->get();
+        foreach ($prevInspections as $prev) {
+            $prevPhotos = $prev->checklist['photos'] ?? [];
+            if (!empty($prevPhotos)) {
+                $photos = array_merge($prevPhotos, $photos);
+            }
+        }
 
-        // Jika ini adalah update (hanya beberapa butir yang diperbarui oleh PIC)
+        // Jika review_data masih kosong di inspeksi ini, cek apakah ada keputusan di inspeksi sebelumnya
+        if (empty($reviewData)) {
+            $prevWithReview = $inspection->ladder->inspections()
+                ->where('id', '<', $inspection->id)
+                ->whereNotNull('review_data')
+                ->latest('id')
+                ->first();
+            if ($prevWithReview && !empty($prevWithReview->review_data)) {
+                $reviewData = $prevWithReview->review_data;
+                // Butir yang baru diperbarui oleh PIC di-reset keputusannya
+                foreach ($updatedKeys as $k) {
+                    $reviewData[$k] = ['decision' => null, 'comment' => null];
+                }
+            }
+        }
+
+        $ladderType = $inspection->ladder->type;
+        $configuredItems = collect(SystemSetting::getActiveChecklists($ladderType))->flatMap(fn ($g) => $g['items'] ?? []);
+        $configuredKeyMap = $configuredItems->keyBy('key');
+
+        // Tampilkan seluruh butir checklist aktif agar inspektor dapat melihat yang sudah di-ACC maupun belum
+        if ($configuredItems->isNotEmpty()) {
+            $items = $configuredItems->map(function ($configItem) use ($checklist, $photos, $reviewData, $updatedKeys) {
+                $key = $configItem['key'];
+                $val = $checklist[$key] ?? false;
+                $decision = $reviewData[$key]['decision'] ?? null;
+                $comment = $reviewData[$key]['comment'] ?? '';
+                $isUpdated = in_array($key, $updatedKeys);
+
+                return [
+                    'key' => $key,
+                    'label' => $configItem['label'],
+                    'checked' => (bool) ($val === 1 || $val === '1' || $val === true),
+                    'pic_comment' => $checklist['comments'][$key] ?? '',
+                    'photo_url' => (!empty($photos[$key])) ? Storage::disk('public')->url($photos[$key]) : null,
+                    'decision' => $decision,
+                    'comment' => $comment,
+                    'is_updated' => $isUpdated,
+                ];
+            })->values();
+        } else {
+            $items = collect($checklist)
+                ->filter(fn ($value, $key) => ($configuredKeyMap->isEmpty() || $configuredKeyMap->has($key)) && $key !== 'inspection_type' && $key !== 'photos' && $key !== 'comments' && $key !== 'updated_keys' && (is_bool($value) || $value === 1 || $value === 0 || $value === '1' || $value === '0'))
+                ->map(fn ($value, $key) => [
+                    'key' => $key,
+                    'label' => $configuredKeyMap->get($key)['label'] ?? str($key)->replace('_', ' ')->title()->toString(),
+                    'checked' => (bool) $value,
+                    'pic_comment' => $checklist['comments'][$key] ?? '',
+                    'photo_url' => (!empty($photos[$key])) ? Storage::disk('public')->url($photos[$key]) : null,
+                    'decision' => $reviewData[$key]['decision'] ?? null,
+                    'comment' => $reviewData[$key]['comment'] ?? '',
+                    'is_updated' => in_array($key, $updatedKeys),
+                ])->values();
+        }
+
         $isPartialUpdate = !empty($updatedKeys) && count($updatedKeys) < $items->count();
-        $itemsToReview = $isPartialUpdate
-            ? $items->filter(fn ($item) => in_array($item['key'], $updatedKeys))->values()
-            : $items;
 
-        $previouslyApprovedCount = $items->count() - $itemsToReview->count();
+        // Jika ini adalah review pembaruan bertahap (parsial), butir yang tidak diperbarui otomatis mempertahankan status ACC sebelumnya
+        if ($isPartialUpdate) {
+            $items = $items->map(function ($it) {
+                if (!$it['is_updated'] && empty($it['decision'])) {
+                    $it['decision'] = 'approved';
+                }
+                return $it;
+            });
+        }
+
+        $updatedItemsCount = count($updatedKeys);
+        $previouslyApprovedCount = $items->filter(fn ($i) => ($i['decision'] ?? null) === 'approved' && !$i['is_updated'])->count();
+
+        // Susun grup checklist (misal Struktur Fisik & Kebersihan untuk portabel) selaras tampilan form ajuan inspeksi
+        $rawGroups = SystemSetting::getActiveChecklists($ladderType);
+        if ($ladderType === 'portable' && count($rawGroups) === 1 && count($rawGroups[0]['items'] ?? []) === 25) {
+            $rawGroups = [
+                [
+                    'title' => 'Struktur Fisik & Komponen Tangga',
+                    'items' => array_slice($rawGroups[0]['items'], 0, 16),
+                ],
+                [
+                    'title' => 'Kebersihan & posisi penggunaan',
+                    'items' => array_slice($rawGroups[0]['items'], 16),
+                ],
+            ];
+        }
+
+        $itemsMap = $items->keyBy('key');
+        $groups = collect($rawGroups)->map(function ($g) use ($itemsMap) {
+            return [
+                'title' => $g['title'] ?? 'Daftar Pemeriksaan',
+                'items' => collect($g['items'] ?? [])
+                    ->map(fn ($it) => $itemsMap->get($it['key']))
+                    ->filter()
+                    ->values(),
+            ];
+        })->values();
+
+        if ($groups->isEmpty()) {
+            $groups = [
+                [
+                    'title' => 'Daftar Pemeriksaan Checklist K3',
+                    'items' => $items,
+                ],
+            ];
+        }
 
         // Ambil riwayat inspeksi & review tangga ini dengan timestamp detail tanggal & jam
         $history = $inspection->ladder->inspections()
@@ -286,10 +408,14 @@ class InspectionController extends Controller
                 'status' => $inspection->status,
                 'workflow_status' => $inspection->workflow_status,
                 'created_at' => $inspection->created_at->toIso8601String(),
+                'notes' => $inspection->notes,
                 'ladder' => $inspection->ladder,
                 'submitter' => $inspection->submitter,
-                'items' => $itemsToReview,
+                'items' => $items,
+                'groups' => $groups,
                 'is_partial_update' => $isPartialUpdate,
+                'updated_keys' => $updatedKeys,
+                'updated_items_count' => $updatedItemsCount,
                 'total_items_count' => $items->count(),
                 'previously_approved_count' => $previouslyApprovedCount,
             ],
@@ -299,7 +425,7 @@ class InspectionController extends Controller
 
     public function reviewStore(Request $request, Inspection $inspection)
     {
-        abort_unless($request->user()->isInspector() && ($request->user()->isAdmin() || $inspection->inspector_id === $request->user()->id), 403);
+        abort_unless($request->user()->isInspector() && ($request->user()->isAdmin() || $inspection->inspector_id === $request->user()->id || $inspection->reviewed_by_id === $request->user()->id), 403);
 
         $validated = $request->validate([
             'decisions' => ['required', 'array'],
@@ -313,8 +439,12 @@ class InspectionController extends Controller
             ]);
         }
 
+        $ladderType = $inspection->ladder->type;
+        $configuredItems = collect(SystemSetting::getActiveChecklists($ladderType))->flatMap(fn ($g) => $g['items'] ?? []);
+        $configuredKeyMap = $configuredItems->keyBy('key');
+
         $checklist = collect($inspection->checklist ?? [])
-            ->filter(fn ($value, $key) => $key !== 'inspection_type' && $key !== 'photos' && $key !== 'comments' && $key !== 'updated_keys' && (is_bool($value) || $value === 1 || $value === 0 || $value === '1' || $value === '0'));
+            ->filter(fn ($value, $key) => ($configuredKeyMap->isEmpty() || $configuredKeyMap->has($key)) && $key !== 'inspection_type' && $key !== 'photos' && $key !== 'comments' && $key !== 'updated_keys' && (is_bool($value) || $value === 1 || $value === 0 || $value === '1' || $value === '0'));
 
         $reviewData = $inspection->review_data ?? [];
 
@@ -353,7 +483,8 @@ class InspectionController extends Controller
 
         $workflowStatus = $hasRejected ? 'needs_correction' : ($hasPending ? 'pending_review' : 'approved');
         $status = ($workflowStatus === 'approved') ? 'safe' : 'unsafe';
-        $validUntil = ($workflowStatus === 'approved') ? Carbon::now()->addDays(365) : null;
+        $validityDays = (int) SystemSetting::get('validity_period_days', 365);
+        $validUntil = ($workflowStatus === 'approved') ? Carbon::now()->addDays($validityDays) : null;
         $approvedAt = ($workflowStatus === 'approved') ? now() : null;
 
         $inspection->update([
@@ -397,15 +528,19 @@ class InspectionController extends Controller
         $photos = $checklist['photos'] ?? [];
         $reviewData = $inspection->review_data ?? [];
 
-        $totalCount = collect($checklist)
+        $ladderType = $inspection->ladder->type;
+        $configuredItems = collect(SystemSetting::getActiveChecklists($ladderType))->flatMap(fn ($g) => $g['items'] ?? []);
+        $configuredKeyMap = $configuredItems->keyBy('key');
+
+        $totalCount = $configuredItems->count() ?: collect($checklist)
             ->filter(fn ($value, $key) => $key !== 'inspection_type' && $key !== 'photos' && $key !== 'comments' && $key !== 'updated_keys' && (is_bool($value) || $value === 1 || $value === 0 || $value === '1' || $value === '0'))
             ->count();
 
         $items = collect($reviewData)
-            ->filter(fn ($review) => ($review['decision'] ?? null) === 'rejected')
+            ->filter(fn ($review, $key) => ($configuredKeyMap->isEmpty() || $configuredKeyMap->has($key)) && ($review['decision'] ?? null) === 'rejected')
             ->map(fn ($review, $key) => [
                 'key' => $key,
-                'label' => str($key)->replace('_', ' ')->title()->toString(),
+                'label' => $configuredKeyMap->get($key)['label'] ?? str($key)->replace('_', ' ')->title()->toString(),
                 'comment' => $review['comment'] ?? '',
                 'photo_url' => (!empty($photos[$key])) ? Storage::disk('public')->url($photos[$key]) : null,
             ])->values();

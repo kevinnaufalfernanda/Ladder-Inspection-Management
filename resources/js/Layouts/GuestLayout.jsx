@@ -1,29 +1,28 @@
 import { Link } from '@inertiajs/react';
-import { ShieldCheck } from 'lucide-react';
 
 export default function GuestLayout({ children }) {
     return (
-        <div className="k3-shell flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 font-sans">
-            {/* Header Brand Seragam dengan Dashboard */}
+        <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 bg-[#f8fafc] font-sans">
+            {/* SafeLadder Brand */}
             <div className="mb-6 flex flex-col items-center text-center">
-                <Link href="/" className="flex items-center gap-3 group">
-                    <div className="k3-brand-mark flex h-11 w-11 items-center justify-center rounded-2xl shadow-sm transition group-hover:scale-105">
-                        <ShieldCheck className="h-6 w-6" />
-                    </div>
-                    <div className="text-left leading-none">
-                        <span className="block text-xl font-extrabold tracking-tight text-[var(--k3-navy)]">
-                            Ladder Inspection
-                        </span>
-                        <span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--k3-brand)]">
-                            Management
-                        </span>
-                    </div>
+                <Link href="/" className="flex items-center gap-2 group">
+                    <span className="text-2xl font-black tracking-tight text-[#0f172a]">
+                        Safe<span className="text-[#f59e0b]">Ladder</span>
+                    </span>
                 </Link>
+                <p className="mt-1 text-xs text-slate-500 font-medium">
+                    Sistem Monitoring & Inspeksi Keselamatan Kerja Tangga
+                </p>
             </div>
 
-            {/* Kotak Card Form Bertema K3 */}
-            <div className="w-full max-w-md rounded-[24px] border border-[var(--k3-line)] bg-white p-6 sm:p-8 shadow-[0_12px_36px_rgba(22,37,31,0.08)]">
+            {/* Kotak Card Form Bertema SafeLadder */}
+            <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs">
                 {children}
+            </div>
+
+            {/* Footer */}
+            <div className="mt-8 text-center text-xs text-slate-400">
+                SafeLadder • Standar F-GRK/EHS Wilmar
             </div>
         </div>
     );

@@ -3,22 +3,33 @@
 @tailwind utilities;
 
 :root {
-    --k3-bg: #eef2ed;
-    --k3-surface: #f7f9f5;
-    --k3-panel: #ffffff;
-    --k3-line: #d9e1d7;
-    --k3-navy: #16251f;
-    --k3-dark: #263d32;
-    --k3-brand: #39735d;
-    --k3-brand-strong: #204c3b;
-    --k3-accent: #c4e86b;
-    --k3-accent-soft: #edf8c9;
-    --k3-alert: #c94c43;
-    --k3-alert-soft: #fae5e1;
-    --k3-safe: #3e8b69;
-    --k3-safe-soft: #deefe3;
-    --k3-text: #17251f;
-    --k3-muted: #718078;
+    --sl-bg: #f8fafc;
+    --sl-surface: #ffffff;
+    --sl-line: #e2e8f0;
+    --sl-line-subtle: #f1f5f9;
+    --sl-navy: #0f172a;
+    --sl-navy-dark: #0b1120;
+    --sl-amber: #f59e0b;
+    --sl-amber-dark: #d97706;
+    --sl-amber-soft: #fef7ee;
+    --sl-amber-border: #fde68a;
+    --sl-emerald: #10b981;
+    --sl-emerald-soft: #ecfdf5;
+    --sl-rose: #ef4444;
+    --sl-rose-soft: #fef2f2;
+    --sl-text-main: #0f172a;
+    --sl-text-muted: #64748b;
+    
+    /* Legacy fallback compatibility */
+    --k3-bg: var(--sl-bg);
+    --k3-surface: var(--sl-surface);
+    --k3-panel: var(--sl-surface);
+    --k3-line: var(--sl-line);
+    --k3-navy: var(--sl-navy);
+    --k3-brand: #d97706;
+    --k3-brand-strong: #b45309;
+    --k3-accent: #f59e0b;
+    --k3-accent-soft: var(--sl-amber-soft);
 }
 
 html {
@@ -26,110 +37,170 @@ html {
 }
 
 body {
-    @apply bg-[var(--k3-bg)] text-[var(--k3-text)] antialiased;
-    font-family: "Figtree", sans-serif;
+    background-color: var(--sl-bg);
+    color: var(--sl-text-main);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 button,
 input,
-textarea {
+textarea,
+select {
     font: inherit;
 }
 
 ::selection {
-    background: rgba(30, 111, 92, 0.18);
+    background: rgba(245, 158, 11, 0.25);
+    color: #0f172a;
 }
 
-.k3-shell {
-    min-height: 100vh;
-    background: #f4f6f3;
+/* Scrollbar halus untuk tema SafeLadder */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
 }
 
-.k3-panel {
-    background: var(--k3-panel);
-    border: 1px solid var(--k3-line);
-    box-shadow: 0 2px 8px rgba(22, 37, 31, 0.035);
-    border-radius: 10px;
-}
-
-.k3-card {
-    background: rgba(255, 255, 255, 0.86);
-    border: 1px solid var(--k3-line);
-    box-shadow: 0 2px 8px rgba(22, 37, 31, 0.035);
-    border-radius: 10px;
-}
-
-.k3-topbar {
-    background: rgba(247, 249, 245, 0.9);
-    border-bottom: 1px solid rgba(217, 225, 215, 0.9);
-    box-shadow: 0 6px 24px rgba(22, 37, 31, 0.04);
-    backdrop-filter: blur(16px);
-}
-
-.k3-nav-link {
-    color: var(--k3-muted);
-    transition: color 180ms ease, background-color 180ms ease;
-}
-
-.k3-nav-link:hover,
-.k3-nav-link-active {
-    color: var(--k3-brand-strong);
-    background: var(--k3-accent-soft);
-}
-
-.k3-brand-mark {
-    background: var(--k3-navy);
-    color: var(--k3-accent);
-}
-
-.k3-soft-badge {
-    background: rgba(30, 111, 92, 0.08);
-    color: var(--k3-brand-strong);
-    border: 1px solid rgba(30, 111, 92, 0.15);
-}
-
-.k3-status-safe {
-    background: var(--k3-safe-soft);
-    color: var(--k3-safe);
-    border: 1px solid rgba(47, 159, 126, 0.2);
-}
-
-.k3-status-alert {
-    background: var(--k3-alert-soft);
-    color: var(--k3-alert);
-    border: 1px solid rgba(217, 74, 65, 0.2);
-}
-
-.k3-status-warning {
-    background: var(--k3-accent-soft);
-    color: #b86d00;
-    border: 1px solid rgba(241, 182, 61, 0.35);
-}
-
-.k3-input {
-    @apply w-full rounded-2xl border border-[#d5ded9] bg-[#f7faf9] px-4 py-3 text-sm text-slate-700 outline-none transition-all;
-}
-
-.k3-input:focus {
-    border-color: rgba(30, 111, 92, 0.7);
-    box-shadow: 0 0 0 4px rgba(30, 111, 92, 0.12);
+/* Komponen styling kustom */
+.sl-card {
     background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02), 0 1px 2px -1px rgba(0, 0, 0, 0.02);
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.k3-button-primary {
-    background: linear-gradient(135deg, var(--k3-brand) 0%, var(--k3-dark) 100%);
-    color: white;
-    box-shadow: 0 16px 30px rgba(20, 74, 61, 0.2);
+.sl-card:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
 }
 
-.k3-button-primary:hover {
-    filter: brightness(0.98);
+.sl-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    background-color: #f59e0b;
+    color: #0f172a;
+    font-weight: 700;
+    border-radius: 0.75rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.8125rem;
+    transition: all 150ms ease;
+    box-shadow: 0 1px 2px 0 rgba(245, 158, 11, 0.2);
+    cursor: pointer;
 }
 
-.k3-button-secondary {
-    background: white;
-    border: 1px solid var(--k3-line);
-    color: var(--k3-text);
+.sl-btn-primary:hover {
+    background-color: #d97706;
+    color: #ffffff;
+    box-shadow: 0 4px 12px 0 rgba(217, 119, 6, 0.25);
+    transform: translateY(-1px);
+}
+
+.sl-btn-primary:active {
+    transform: translateY(0);
+}
+
+/* Tombol Kembali & Aksi Sekunder Modern */
+.sl-btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #475569;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.625rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+    transition: all 150ms ease;
+    cursor: pointer;
+}
+
+.sl-btn-back:hover {
+    background-color: #f8fafc;
+    color: #0f172a;
+    border-color: #cbd5e1;
+}
+
+.sl-btn-back:active {
+    transform: scale(0.98);
+}
+
+/* ========================================================================= */
+/* Animasi Pop-up, Modal, & Drawer Halus (Non-Instan)                        */
+/* ========================================================================= */
+@keyframes slFadeIn {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes slPopIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.92) translateY(-8px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes slDrawerIn {
+    0% {
+        opacity: 0;
+        transform: translateX(36px) scale(0.97);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+@keyframes slModalIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.92) translateY(12px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.sl-animate-fade-in {
+    animation: slFadeIn 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.sl-animate-pop-in {
+    animation: slPopIn 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    transform-origin: top right;
+}
+
+.sl-animate-drawer-in {
+    animation: slDrawerIn 280ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    transform-origin: right center;
+}
+
+.sl-animate-modal-in {
+    animation: slModalIn 240ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    transform-origin: center center;
 }
 
 @media print {
@@ -146,19 +217,4 @@ textarea {
     .print\:hidden {
         display: none !important;
     }
-
-    .print\:shadow-none {
-        box-shadow: none !important;
-    }
-
-    .print\:border-4 {
-        border-width: 4px !important;
-    }
-
-    .print\:break-inside-avoid {
-        break-inside: avoid !important;
-        page-break-inside: avoid !important;
-    }
 }
-
-

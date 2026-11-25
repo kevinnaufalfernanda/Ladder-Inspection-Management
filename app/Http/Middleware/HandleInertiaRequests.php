@@ -43,6 +43,11 @@ class HandleInertiaRequests extends Middleware
             'unread_notifications_count' => $request->user()
                 ? $request->user()->unreadNotifications()->count()
                 : 0,
+            'pending_reviews_count' => fn () => $request->user() && $request->user()->isInspector()
+                ? \App\Models\Inspection::where('workflow_status', 'pending_review')
+                    ->when(!$request->user()->isAdmin(), fn ($q) => $q->where('inspector_id', $request->user()->id))
+                    ->count()
+                : 0,
         ];
     }
 }

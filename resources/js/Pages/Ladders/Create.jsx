@@ -1,6 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, PlusCircle, Sparkles } from 'lucide-react';
+import { ArrowLeft, PlusCircle } from 'lucide-react';
 import { useEffect } from 'react';
 
 export default function Create({ inspectors = [], pics = [], locationMappings = [] }) {
@@ -35,48 +35,59 @@ export default function Create({ inspectors = [], pics = [], locationMappings = 
     const selectedInspector = inspectors.find((ins) => String(ins.id) === String(data.inspector_id));
 
     return (
-        <AuthenticatedLayout>
-            <Head title="Identifikasi Tangga" />
+        <AuthenticatedLayout
+            breadcrumbs={[
+                { label: 'Data Aset', href: route('ladders.index') },
+                { label: 'Tambah Aset' },
+            ]}
+        >
+            <Head title="Identifikasi Tangga Baru" />
 
-            <div className="mx-auto max-w-7xl space-y-5 px-4 py-6 sm:px-6 lg:px-8">
-                {/* Header Selaras Dashboard */}
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                        <p className="text-xs font-medium text-slate-500">Langkah 1: Identifikasi Aset Tangga</p>
-                        <h1 className="mt-1 text-xl font-semibold text-slate-900">Form Identifikasi Tangga</h1>
+            <div className="mx-auto max-w-7xl space-y-6">
+                {/* Header Selaras SafeLadder */}
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <Link
+                            href={route('dashboard')}
+                            className="sl-btn-back"
+                        >
+                            <ArrowLeft className="h-3.5 w-3.5" />
+                            <span>Kembali</span>
+                        </Link>
+                        <div>
+                            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
+                                Identifikasi Tangga Baru
+                            </h1>
+                            <p className="mt-0.5 text-xs text-slate-500">
+                                Langkah 1: Daftarkan spesifikasi teknis dan lokasi penempatan tangga
+                            </p>
+                        </div>
                     </div>
-                    <Link
-                        href={route('dashboard')}
-                        className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--k3-brand-strong)] hover:text-[var(--k3-navy)]"
-                    >
-                        <ArrowLeft className="h-4 w-4" />
-                        Kembali ke Dashboard
-                    </Link>
                 </div>
 
-                <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr]">
+                <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
                     {/* Panel Form Utama */}
-                    <form onSubmit={submit} className="k3-panel p-6 sm:p-7 space-y-5">
-                        <div className="border-b border-[var(--k3-line)] pb-4">
-                            <h2 className="text-base font-bold text-[var(--k3-navy)]">Identifikasi Aset Tangga</h2>
-                            <p className="mt-1 text-xs text-[var(--k3-muted)]">
-                                Isi spesifikasi dasar tangga. Lokasi penempatan akan secara otomatis menentukan Inspektor tujuan.
+                    <form onSubmit={submit} className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-7 shadow-xs space-y-5">
+                        <div className="border-b border-slate-100 pb-4">
+                            <h2 className="text-base font-bold text-slate-900">Spesifikasi Identitas Tangga</h2>
+                            <p className="mt-1 text-xs text-slate-500">
+                                Isi spesifikasi teknis tangga. Lokasi penempatan akan secara otomatis menentukan Inspektor EHS penilai.
                             </p>
                         </div>
 
                         {/* A. Jenis Tangga */}
                         <div>
-                            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-[var(--k3-navy)]">
+                            <label className="mb-2 block text-xs font-black uppercase tracking-wider text-slate-700">
                                 A. Jenis Tangga
                             </label>
                             <div className="grid grid-cols-2 gap-3">
                                 <button
                                     type="button"
                                     onClick={() => setData('type', 'portable')}
-                                    className={`flex items-center justify-center rounded-xl border-2 py-3 text-xs sm:text-sm font-bold transition ${
+                                    className={`flex items-center justify-center rounded-xl border-2 py-3 text-xs sm:text-sm font-bold transition cursor-pointer ${
                                         data.type === 'portable'
-                                            ? 'border-[var(--k3-brand)] bg-[var(--k3-accent-soft)] text-[var(--k3-brand-strong)] shadow-sm'
-                                            : 'border-[var(--k3-line)] bg-white text-slate-600 hover:border-slate-300'
+                                            ? 'border-[#0f172a] bg-slate-900 text-white shadow-xs'
+                                            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
                                     }`}
                                 >
                                     Tangga Portabel (PLD)
@@ -84,10 +95,10 @@ export default function Create({ inspectors = [], pics = [], locationMappings = 
                                 <button
                                     type="button"
                                     onClick={() => setData('type', 'permanent')}
-                                    className={`flex items-center justify-center rounded-xl border-2 py-3 text-xs sm:text-sm font-bold transition ${
+                                    className={`flex items-center justify-center rounded-xl border-2 py-3 text-xs sm:text-sm font-bold transition cursor-pointer ${
                                         data.type === 'permanent'
-                                            ? 'border-[var(--k3-brand)] bg-[var(--k3-accent-soft)] text-[var(--k3-brand-strong)] shadow-sm'
-                                            : 'border-[var(--k3-line)] bg-white text-slate-600 hover:border-slate-300'
+                                            ? 'border-[#0f172a] bg-slate-900 text-white shadow-xs'
+                                            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
                                     }`}
                                 >
                                     Tangga Tetap (FLD)
@@ -99,11 +110,11 @@ export default function Create({ inspectors = [], pics = [], locationMappings = 
                         {/* B. Lokasi Penempatan */}
                         <div>
                             <div className="flex items-center justify-between mb-1.5">
-                                <label htmlFor="location" className="block text-xs font-bold uppercase tracking-wider text-[var(--k3-navy)]">
+                                <label htmlFor="location" className="block text-xs font-semibold text-slate-700">
                                     B. Lokasi Penempatan
                                 </label>
-                                <span className="text-[11px] text-[var(--k3-brand)] font-semibold flex items-center gap-1">
-                                    <Sparkles className="w-3 h-3" /> Auto-assign Inspektor
+                                <span className="text-[11px] text-slate-400 font-medium">
+                                    Otomatisasi penugasan inspektor
                                 </span>
                             </div>
                             <input
@@ -112,8 +123,8 @@ export default function Create({ inspectors = [], pics = [], locationMappings = 
                                 list="location-presets"
                                 value={data.location}
                                 onChange={(e) => setData('location', e.target.value)}
-                                className="w-full rounded-xl border border-[var(--k3-line)] bg-[var(--k3-surface)] px-3.5 py-2.5 text-sm text-[var(--k3-navy)] placeholder-slate-400 focus:border-[var(--k3-brand)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--k3-brand)] transition"
-                                placeholder="Ketik lokasi atau pilih dari daftar preset (misal: Plant Area ME-FAL)"
+                                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:border-[#0f172a] focus:outline-none transition"
+                                placeholder="Ketik lokasi atau pilih dari daftar preset (misal: Kawasan Gresik)"
                                 autoFocus
                                 required
                             />
@@ -128,15 +139,15 @@ export default function Create({ inspectors = [], pics = [], locationMappings = 
                         </div>
 
                         {/* Inspektor Tujuan (Sesuai Lokasi) */}
-                        <div className="rounded-xl border border-[var(--k3-line)] bg-[var(--k3-surface)] p-4">
-                            <label htmlFor="inspector_id" className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[var(--k3-brand-strong)]">
+                        <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                            <label htmlFor="inspector_id" className="mb-1.5 block text-xs font-black uppercase tracking-wider text-slate-700">
                                 Nama Inspektor (Otomatis Sesuai Lokasi / Zona)
                             </label>
                             <select
                                 id="inspector_id"
                                 value={data.inspector_id}
                                 onChange={(e) => setData('inspector_id', e.target.value)}
-                                className="w-full rounded-lg border border-[var(--k3-line)] bg-white px-3 py-2 text-sm font-semibold text-[var(--k3-navy)] focus:border-[var(--k3-brand)] focus:outline-none focus:ring-1 focus:ring-[var(--k3-brand)]"
+                                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 focus:border-[#0f172a] focus:outline-none cursor-pointer"
                                 required
                             >
                                 <option value="">Pilih Inspektor</option>
@@ -146,7 +157,7 @@ export default function Create({ inspectors = [], pics = [], locationMappings = 
                                     </option>
                                 ))}
                             </select>
-                            <p className="mt-1.5 text-xs text-[var(--k3-muted)]">
+                            <p className="mt-1.5 text-xs text-slate-500">
                                 {selectedInspector
                                     ? `Hasil formulir inspeksi akan otomatis dikirimkan ke ${selectedInspector.name} untuk direview.`
                                     : 'Ketik lokasi di atas untuk auto-assign inspektor K3 yang bertugas.'}
@@ -157,7 +168,7 @@ export default function Create({ inspectors = [], pics = [], locationMappings = 
                         {/* C & D: Pemilik & Penanggung Jawab */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label htmlFor="owner_name" className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[var(--k3-navy)]">
+                                <label htmlFor="owner_name" className="mb-1.5 block text-xs font-black uppercase tracking-wider text-slate-700">
                                     C. Nama Pemilik (Owner)
                                 </label>
                                 <input
@@ -165,7 +176,7 @@ export default function Create({ inspectors = [], pics = [], locationMappings = 
                                     type="text"
                                     value={data.owner_name}
                                     onChange={(e) => setData('owner_name', e.target.value)}
-                                    className="w-full rounded-xl border border-[var(--k3-line)] bg-[var(--k3-surface)] px-3.5 py-2.5 text-sm text-[var(--k3-navy)] placeholder-slate-400 focus:border-[var(--k3-brand)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--k3-brand)] transition"
+                                    className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:border-[#0f172a] focus:outline-none transition"
                                     placeholder="Contoh: Plant / Kontraktor"
                                     required
                                 />
@@ -173,14 +184,14 @@ export default function Create({ inspectors = [], pics = [], locationMappings = 
                             </div>
 
                             <div>
-                                <label htmlFor="responsible_name" className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[var(--k3-navy)]">
+                                <label htmlFor="responsible_name" className="mb-1.5 block text-xs font-black uppercase tracking-wider text-slate-700">
                                     D. Nama Penanggung Jawab (PIC Safety)
                                 </label>
                                 <select
                                     id="responsible_name"
                                     value={data.responsible_name}
                                     onChange={(e) => setData('responsible_name', e.target.value)}
-                                    className="w-full rounded-xl border border-[var(--k3-line)] bg-white px-3.5 py-2.5 text-sm font-semibold text-[var(--k3-navy)] focus:border-[var(--k3-brand)] focus:outline-none focus:ring-1 focus:ring-[var(--k3-brand)] transition"
+                                    className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-800 focus:border-[#0f172a] focus:outline-none transition cursor-pointer"
                                     required
                                 >
                                     <option value="">Pilih PIC Safety</option>
@@ -196,7 +207,7 @@ export default function Create({ inspectors = [], pics = [], locationMappings = 
 
                         {/* Beban Maksimal */}
                         <div>
-                            <label htmlFor="max_load" className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[var(--k3-navy)]">
+                            <label htmlFor="max_load" className="mb-1.5 block text-xs font-black uppercase tracking-wider text-slate-700">
                                 Beban Maksimal Tangga (Kg)
                             </label>
                             <input
@@ -206,11 +217,11 @@ export default function Create({ inspectors = [], pics = [], locationMappings = 
                                 step="0.01"
                                 value={data.max_load}
                                 onChange={(e) => setData('max_load', e.target.value)}
-                                className="w-full rounded-xl border border-[var(--k3-line)] bg-[var(--k3-surface)] px-3.5 py-2.5 text-sm text-[var(--k3-navy)] placeholder-slate-400 focus:border-[var(--k3-brand)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--k3-brand)] transition"
+                                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:border-[#0f172a] focus:outline-none transition"
                                 placeholder="Contoh: 150"
                                 required
                             />
-                            <p className="mt-1 text-[11px] text-[var(--k3-muted)]">
+                            <p className="mt-1 text-[11px] text-slate-400">
                                 Nilai beban maksimal ini akan dicantumkan pada label fisik tangga.
                             </p>
                             {errors.max_load && <p className="mt-1 text-xs font-semibold text-rose-600">{errors.max_load}</p>}
@@ -218,7 +229,7 @@ export default function Create({ inspectors = [], pics = [], locationMappings = 
 
                         {/* Keterangan Tambahan */}
                         <div>
-                            <label htmlFor="description" className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[var(--k3-navy)]">
+                            <label htmlFor="description" className="mb-1.5 block text-xs font-black uppercase tracking-wider text-slate-700">
                                 Keterangan Tambahan <span className="font-normal text-slate-400">(Opsional)</span>
                             </label>
                             <textarea
@@ -226,18 +237,18 @@ export default function Create({ inspectors = [], pics = [], locationMappings = 
                                 value={data.description}
                                 onChange={(e) => setData('description', e.target.value)}
                                 rows="3"
-                                className="w-full resize-none rounded-xl border border-[var(--k3-line)] bg-[var(--k3-surface)] px-3.5 py-2.5 text-sm text-[var(--k3-navy)] placeholder-slate-400 focus:border-[var(--k3-brand)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--k3-brand)] transition"
+                                className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:border-[#0f172a] focus:outline-none transition"
                                 placeholder="Tambahkan informasi spesifik mengenai material atau area..."
                             />
                             {errors.description && <p className="mt-1 text-xs font-semibold text-rose-600">{errors.description}</p>}
                         </div>
 
-                        {/* Submit Button Bertema K3 Navy */}
-                        <div className="flex justify-end pt-3 border-t border-[var(--k3-line)]">
+                        {/* Submit Button Bertema SafeLadder Amber */}
+                        <div className="flex justify-end pt-3 border-t border-slate-100">
                             <button
                                 type="submit"
                                 disabled={processing}
-                                className="inline-flex items-center gap-2 rounded-xl bg-[var(--k3-navy)] px-6 py-3 text-sm font-bold text-white shadow-md transition hover:bg-[var(--k3-brand-strong)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                                className="inline-flex items-center gap-2 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] px-6 py-3 text-sm font-bold text-white shadow-md transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                             >
                                 <PlusCircle className="h-4 w-4" />
                                 {processing ? 'Menyimpan...' : 'Lanjut ke Formulir Inspeksi'}
@@ -246,26 +257,26 @@ export default function Create({ inspectors = [], pics = [], locationMappings = 
                     </form>
 
                     {/* Sidebar Panduan Alur */}
-                    <aside className="h-fit k3-panel p-6 space-y-4">
-                        <h3 className="font-bold text-[var(--k3-navy)] text-sm uppercase tracking-wider border-b border-[var(--k3-line)] pb-2">
-                            Alur Kerja Sistem (Workflow)
+                    <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
+                        <h3 className="font-black text-slate-900 text-xs uppercase tracking-wider border-b border-slate-100 pb-2">
+                            Alur Kerja SafeLadder
                         </h3>
-                        <div className="space-y-4 text-xs text-[var(--k3-muted)] leading-relaxed">
+                        <div className="space-y-4 text-xs text-slate-500 leading-relaxed">
                             <div className="flex gap-3">
-                                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--k3-accent-soft)] text-xs font-bold text-[var(--k3-brand-strong)]">1</div>
-                                <p><strong className="text-[var(--k3-navy)]">Identifikasi:</strong> PIC Safety mengisi data dasar tangga & lokasi penempatan.</p>
+                                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-800">1</div>
+                                <p><strong className="text-slate-900">Identifikasi:</strong> PIC Safety mengisi data teknis tangga & lokasi penempatan.</p>
                             </div>
                             <div className="flex gap-3">
-                                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--k3-accent-soft)] text-xs font-bold text-[var(--k3-brand-strong)]">2</div>
-                                <p><strong className="text-[var(--k3-navy)]">Formulir Inspeksi:</strong> Mengisi checklist fisik & upload bukti foto aktual.</p>
+                                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-700">2</div>
+                                <p><strong className="text-slate-900">Formulir Inspeksi:</strong> Mengisi checklist fisik & upload bukti foto aktual.</p>
                             </div>
                             <div className="flex gap-3">
-                                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--k3-accent-soft)] text-xs font-bold text-[var(--k3-brand-strong)]">3</div>
-                                <p><strong className="text-[var(--k3-navy)]">Review Inspektor:</strong> Inspektor EHS mereview dan menentukan Approve / Reject per item.</p>
+                                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-700">3</div>
+                                <p><strong className="text-slate-900">Review Inspektor:</strong> Inspektor EHS mereview dan menentukan ACC / Reject per butir.</p>
                             </div>
                             <div className="flex gap-3">
-                                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--k3-accent-soft)] text-xs font-bold text-[var(--k3-brand-strong)]">4</div>
-                                <p><strong className="text-[var(--k3-navy)]">Label Identifikasi:</strong> Jika Approve, otomatis generate Label QR Code dengan masa berlaku 1 tahun.</p>
+                                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-700">4</div>
+                                <p><strong className="text-slate-900">Label Identifikasi:</strong> Jika ACC, label QR Code fisik siap dicetak dengan masa berlaku 1 tahun.</p>
                             </div>
                         </div>
                     </aside>
